@@ -9,13 +9,15 @@ const protectedRoutes = {
 }
 
 export function middleware(request: NextRequest) {
-  const userRole = request.cookies.get('userRole')?.value
   const path = request.nextUrl.pathname
 
   // Check if the current path is a protected route
   if (path in protectedRoutes) {
-    // If no role cookie exists, redirect to login
+    // Get token from cookies
+    const userRole = request.cookies.get('userRole')?.value
+    
     if (!userRole) {
+      console.log('No user role found in cookies, redirecting to login');
       return NextResponse.redirect(new URL('/login', request.url))
     }
 

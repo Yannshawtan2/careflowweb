@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+careflow-317ed-firebase-adminsdk-fbsvc-14c4666af5.json
 
 # vercel
 .vercel

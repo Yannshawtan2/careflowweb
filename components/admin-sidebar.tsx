@@ -11,16 +11,13 @@ export function AdminSidebar() {
     <div className="hidden border-r border-[#DDEB9D] bg-[#FAF6E9] md:flex md:w-64 md:flex-col">
       <div className="flex flex-col space-y-2 p-4">
         <div className="flex h-16 items-center px-4">
-          <h2 className="text-lg font-bold text-[#A0C878]">Admin Dashboard</h2>
+          <h2 className="text-lg font-bold text-[#A0C878]">Admin</h2>
         </div>
         <nav className="flex-1 space-y-2">
-          <NavItem href="/" icon={Home} active>
+          <NavItem href="/admindashboard" icon={Home} >
             Dashboard
           </NavItem>
-          <NavItem href="/residences" icon={Building}>
-            Residences
-          </NavItem>
-          <NavItem href="/staff" icon={Users}>
+          <NavItem href="/admindashboard/users" icon={Users}>
             Staff
           </NavItem>
           <NavItem href="/inventory" icon={Package}>

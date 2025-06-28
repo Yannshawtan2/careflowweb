@@ -1,8 +1,8 @@
 "use client"
 
 import type React from "react"
-import { logout } from "@/lib/auth";
-import { Building, DollarSign, Home, LogOut, Package, Settings, Users } from "lucide-react"
+
+import { DollarSign, Home, Package, BookHeart, Users } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
@@ -23,18 +23,12 @@ export function AdminSidebar() {
           <NavItem href="/inventory" icon={Package}>
             Inventory
           </NavItem>
-          <NavItem href="/admindashboard/billing" icon={DollarSign}>
-            Billing & Payments
+          <NavItem href="/staffdashboard/health-records" icon={DollarSign}>
+            Health Records
           </NavItem>
-          <NavItem href="/settings" icon={Settings}>
+          <NavItem href="/settings" icon={BookHeart}>
             Settings
           </NavItem>
-          <div className="pt-4">
-            <button onClick={logout} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all text-muted-foreground hover:bg-[#DDEB9D] hover:text-black" >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </button>
-          </div>
         </nav>
       </div>
     </div>

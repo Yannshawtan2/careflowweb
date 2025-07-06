@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminHeader } from "@/components/AdminHeader"
+import { CreateUserForm } from "@/components/create-user-form"
 
 // export const metadata: Metadata = {
 //   title: "Users",
@@ -22,6 +23,8 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null)
   const [deletingUid, setDeletingUid] = useState<string | null>(null)
   const [confirmPopover, setConfirmPopover] = useState<string | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingUser, setEditingUser] = useState<any>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -35,7 +38,9 @@ export default function UsersPage() {
       const res = await fetch("/api/users")
       const data = await res.json()
       if (data.success) {
-        setUsers(data.users)
+        // Only show users (staff, admins, guardians) in the table, not patients
+        const filteredUsers = data.users.filter((user: any) => user.role !== 'patient')
+        setUsers(filteredUsers)
       } else {
         setError(data.error || "Failed to fetch users")
       }
@@ -46,13 +51,20 @@ export default function UsersPage() {
     }
   }
 
-  async function handleDelete(uid: string) {
-    setDeletingUid(uid)
+  async function handleDelete(user: any) {
+    // Get the user ID - try uid first, then email, then document ID
+    const userId = user.uid || user.email || user.id
+    if (!userId) {
+      alert("Cannot delete user: No valid identifier found")
+      return
+    }
+    
+    setDeletingUid(userId)
     try {
-      const res = await fetch(`/api/users?uid=${uid}`, { method: "DELETE" })
+      const res = await fetch(`/api/users?uid=${userId}`, { method: "DELETE" })
       const data = await res.json()
       if (data.success) {
-        setUsers((prev) => prev.filter((u) => u.uid !== uid))
+        setUsers((prev) => prev.filter((u) => (u.uid || u.email || u.id) !== userId))
       } else {
         alert(data.error || "Failed to delete user")
       }
@@ -65,7 +77,22 @@ export default function UsersPage() {
   }
 
   function handleEdit(user: any) {
-    router.push(`/admindashboard/users/create?uid=${user.uid}`)
+    setEditingUser(user)
+    setShowCreateModal(true)
+  }
+
+  function handleCreateUser() {
+    setEditingUser(null)
+    setShowCreateModal(true)
+  }
+
+  function handleCloseModal() {
+    setShowCreateModal(false)
+    setEditingUser(null)
+  }
+
+  function handleUserCreated() {
+    fetchUsers() // Refresh the users list
   }
 
   return (
@@ -74,12 +101,16 @@ export default function UsersPage() {
       <AdminSidebar />
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight text-[#A0C878]">Users</h2>
-          <Button asChild className="bg-[#A0C878] hover:bg-[#8AB868] text-white">
-            <Link href="/admindashboard/users/create">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create User
-            </Link>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-[#A0C878]">User Management</h2>
+            <p className="text-muted-foreground">Manage staff, administrators, and guardians</p>
+          </div>
+          <Button 
+            onClick={handleCreateUser}
+            className="bg-[#A0C878] hover:bg-[#8AB868] text-white"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create User
           </Button>
         </div>
 
@@ -90,7 +121,7 @@ export default function UsersPage() {
             <p className="text-center text-red-500">{error}</p>
           ) : users.length === 0 ? (
             <p className="text-center text-muted-foreground">
-              No users found. Click the "Create User" button to add a new user.
+              No users found. Click the "Create User" button to add a new staff member, administrator, or guardian.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -105,8 +136,8 @@ export default function UsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
-                    <tr key={user.uid || user.email} className="border-t border-[#DDEB9D]">
+                  {users.map((user, index) => (
+                    <tr key={user.uid || user.email || `user-${index}`} className="border-t border-[#DDEB9D]">
                       <td className="px-4 py-2">{user.name}</td>
                       <td className="px-4 py-2">{user.email}</td>
                       <td className="px-4 py-2">{user.role}</td>
@@ -121,7 +152,7 @@ export default function UsersPage() {
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Popover open={confirmPopover === user.uid} onOpenChange={(open) => setConfirmPopover(open ? user.uid : null)}>
+                        <Popover open={confirmPopover === (user.uid || user.email || user.id)} onOpenChange={(open) => setConfirmPopover(open ? (user.uid || user.email || user.id) : null)}>
                           <PopoverTrigger asChild>
                             <Button
                               size="icon"
@@ -148,10 +179,10 @@ export default function UsersPage() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => handleDelete(user.uid)}
-                                  disabled={deletingUid === user.uid}
+                                  onClick={() => handleDelete(user)}
+                                  disabled={deletingUid === (user.uid || user.email || user.id)}
                                 >
-                                  {deletingUid === user.uid ? "Deleting..." : "Delete"}
+                                  {deletingUid === (user.uid || user.email || user.id) ? "Deleting..." : "Delete"}
                                 </Button>
                               </div>
                             </div>
@@ -167,6 +198,16 @@ export default function UsersPage() {
         </div>
       </div>
     </div>
+
+    {/* Create/Edit User Modal */}
+    <CreateUserForm
+      isOpen={showCreateModal}
+      onClose={handleCloseModal}
+      onUserCreated={handleUserCreated}
+      initialValues={editingUser}
+      mode={editingUser ? "update" : "create"}
+      uid={editingUser?.uid}
+    />
     </>
   )
 }

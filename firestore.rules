@@ -1,0 +1,165 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is an admin
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Helper function to check if user is staff (nurse)
+    function isStaff() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff';
+    }
+
+    // Helper function to check if user is admin or staff
+    function isAdminOrStaff() {
+      return isAdmin() || isStaff();
+    }
+
+    // Helper function to check if user is a guardian
+    function isGuardian() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'guardian';
+    }
+
+    // Helper function to check if user is a patient
+    function isPatient() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'patient';
+    }
+
+    // Helper function to check if the document belongs to the authenticated user
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Helper function to check if the document belongs to the guardian's patient
+    function isGuardianPatient(patientId) {
+      return isGuardian() && 
+        get(/databases/$(database)/documents/patients/$(patientId)).data.guardianId == request.auth.uid;
+    }
+
+    // Helper function to check if user is a guardian of the patient
+    function isGuardianOfPatient(patientData) {
+      return isGuardian() && patientData.guardianId == request.auth.uid;
+    }
+
+
+
+    // Users collection rules (staff, admins, and guardians only)
+    match /users/{userId} {
+      // Allow admins to read and write all user documents
+      allow read, write: if isAdmin();
+      // Allow staff to read user documents (for guardian information)
+      allow read: if isStaff();
+      // Allow users to read their own document
+      allow read: if isOwner(userId);
+      // Only allow admins to write to user documents
+      allow write: if isAdmin();
+    }
+
+    // Staff collection rules
+    match /staff/{document=**} {
+      // Allow admins to read and write all staff data
+      allow read, write: if isAdmin();
+      // Allow staff to read staff data
+      allow read: if isStaff();
+    }
+
+    // Health Records collection rules
+    match /healthRecords/{recordId} {
+      // Allow admins to read and write all health records
+      allow read, write: if isAdmin();
+      // Allow staff to read and write health records
+      allow read, write: if isStaff();
+      // Allow guardians to read their own patient's health records (family visible updates only)
+      allow read: if isGuardian() && 
+        get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.guardianId == request.auth.uid;
+    }
+
+    // Clinical Notes collection rules
+    match /clinicalNotes/{noteId} {
+      // Allow admins to read and write all clinical notes
+      allow read, write: if isAdmin();
+      // Allow staff to read and write clinical notes
+      allow read, write: if isStaff();
+      // Guardians cannot access clinical notes (confidential medical information)
+      // This ensures clinical notes remain private to medical staff only
+      allow read, write: if false;
+    }
+
+    // Subscriptions collection rules
+    match /subscriptions/{subscriptionId} {
+      // Allow admins to read and write all subscriptions
+      allow read, write: if isAdmin();
+      // Allow staff to read subscriptions
+      allow read: if isStaff();
+      // Allow guardians to read their own subscriptions
+      allow read: if isAuthenticated() && 
+        resource.data.guardianId == request.auth.uid;
+    }
+
+    // Transactions collection rules
+    match /transactions/{transactionId} {
+      // Allow admins to read and write all transactions
+      allow read, write: if isAdmin();
+      // Allow staff to read transactions
+      allow read: if isStaff();
+      // Allow guardians to read their own transactions
+      allow read: if isAuthenticated() && 
+        resource.data.guardianId == request.auth.uid;
+    }
+
+    // Emergency Contacts collection rules
+    match /emergencyContacts/{contactId} {
+      // Allow admins to read and write all emergency contacts
+      allow read, write: if isAdmin();
+      // Allow staff to read and write emergency contacts
+      allow read, write: if isStaff();
+    }
+
+    // Patients collection rules
+    match /patients/{patientId} {
+      // Allow admins to read and write all patient documents
+      allow read, write: if isAdmin();
+      // Allow staff to read and write patient documents
+      allow read, write: if isStaff();
+      // Allow guardians to read their own patient documents
+      allow read: if isGuardianOfPatient(resource.data);
+      // Allow guardians to update their own patient documents (limited fields)
+      allow update: if isGuardianOfPatient(resource.data) && 
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['emergencyContact', 'guardianPhone', 'updatedAt']);
+      // Allow creation of new patients (for staff adding patients)
+      allow create: if isAdminOrStaff();
+    }
+
+    // Inventory collection rules
+    match /inventory/{itemId} {
+      // Allow admins to read and write all inventory
+      allow read, write: if isAdmin();
+      // Allow staff to read inventory
+      allow read: if isStaff();
+    }
+
+    // Billing collections rules
+    match /billing/{document=**} {
+      // Allow admins to read and write all billing data
+      allow read, write: if isAdmin();
+      // Allow staff to read billing data
+      allow read: if isStaff();
+    }
+
+    // Default rule - deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

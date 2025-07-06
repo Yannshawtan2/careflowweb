@@ -4,7 +4,8 @@ import { getFirestore } from 'firebase-admin/firestore';
 var admin = require("firebase-admin");
 // Initialize Firebase Admin if it hasn't been initialized
 if (!getApps().length) {
-  var serviceAccount = require("../careflow-317ed-firebase-adminsdk-fbsvc-14c4666af5.json");
+  var serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_SDK || "");
+  // require("../careflow-317ed-firebase-adminsdk-fbsvc-14c4666af5.json");
    
   if (!serviceAccount) {
     throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set or invalid.');

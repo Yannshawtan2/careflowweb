@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import type { Patient, Vitals, MoodScale } from "@/lib/types"
+import { toast } from "sonner";
 
 interface PatientCardProps {
   patient: Patient
@@ -17,7 +18,6 @@ interface PatientCardProps {
     vitals?: Vitals
   } | null
   onHealthUpdate: () => void
-  onEmergencyContact: () => void
   getCareLevelColor: (careLevel: string) => string
   getStatusColor: (status: string) => string
 }
@@ -26,7 +26,6 @@ export function PatientCard({
   patient,
   healthSummary,
   onHealthUpdate,
-  onEmergencyContact,
   getCareLevelColor,
   getStatusColor
 }: PatientCardProps) {
@@ -83,6 +82,28 @@ export function PatientCard({
     return age
   }
 
+  const handleEmergencyContact = async () => {
+    try {
+      const res = await fetch('/api/notify-guardian', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guardianId: patient.guardianId,
+          patientName: patient.name,
+          patientId: patient.id,
+        }),
+      });
+      if (res.ok) {
+        toast.success('Emergency alert sent to guardian!');
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to send emergency alert.');
+      }
+    } catch (err) {
+      toast.error('Failed to send emergency alert.');
+    }
+  };
+
   return (
     <Card 
       className={`bg-[#FAF6E9] border-[#DDEB9D] transition-all duration-200 hover:shadow-lg ${
@@ -128,7 +149,7 @@ export function PatientCard({
             <Button
               size="sm"
               variant="outline"
-              onClick={onEmergencyContact}
+              onClick={handleEmergencyContact}
               className="border-red-200 text-red-600 hover:bg-red-50"
             >
               <Phone className="h-4 w-4 mr-1" />

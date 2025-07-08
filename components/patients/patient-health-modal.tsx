@@ -143,17 +143,16 @@ export function PatientHealthModal({ isOpen, onClose, patient, onUpdate }: Patie
       
       if (healthRecordSnap.exists()) {
         const data = healthRecordSnap.data()
-        const latestFamilyUpdate = data.familyVisibleUpdates?.[data.familyVisibleUpdates.length - 1]
-        const latestClinicalNote = data.clinicalNotes?.[data.clinicalNotes.length - 1]
+        const currentFamilyUpdate = data.currentFamilyVisibleUpdate
         
-        if (latestFamilyUpdate) {
+        if (currentFamilyUpdate) {
           setFamilyForm({
-            vitals: latestFamilyUpdate.vitals || familyForm.vitals,
-            mood: latestFamilyUpdate.mood?.value || 3,
-            appetite: latestFamilyUpdate.appetite?.value || "fair",
-            activityParticipation: latestFamilyUpdate.activityParticipation || [],
-            medicationCompliance: latestFamilyUpdate.medicationCompliance || [],
-            generalNotes: latestFamilyUpdate.generalNotes || ""
+            vitals: currentFamilyUpdate.vitals || familyForm.vitals,
+            mood: currentFamilyUpdate.mood?.value || 3,
+            appetite: currentFamilyUpdate.appetite?.value || "fair",
+            activityParticipation: currentFamilyUpdate.activityParticipation || [],
+            medicationCompliance: currentFamilyUpdate.medicationCompliance || [],
+            generalNotes: currentFamilyUpdate.generalNotes || ""
           })
         }
       }
@@ -263,14 +262,13 @@ export function PatientHealthModal({ isOpen, onClose, patient, onUpdate }: Patie
       
       if (healthRecordSnap.exists()) {
         const data = healthRecordSnap.data()
-        const familyUpdates = data.familyVisibleUpdates || []
+        const currentFamilyUpdate = data.currentFamilyVisibleUpdate
         
-        if (familyUpdates.length === 0) {
+        if (!currentFamilyUpdate) {
           return false
         }
 
-        const latestUpdate = familyUpdates[familyUpdates.length - 1]
-        const updateDate = new Date(latestUpdate.timestamp)
+        const updateDate = new Date(currentFamilyUpdate.timestamp)
         const today = new Date()
         
         return updateDate.toDateString() === today.toDateString()
@@ -325,14 +323,13 @@ export function PatientHealthModal({ isOpen, onClose, patient, onUpdate }: Patie
       if (healthRecordSnap.exists()) {
         const existingData = healthRecordSnap.data()
         await updateDoc(healthRecordRef, {
-          familyVisibleUpdates: [...(existingData.familyVisibleUpdates || []), cleanFamilyUpdate],
+          currentFamilyVisibleUpdate: cleanFamilyUpdate, // Replace instead of append
           lastUpdated: serverTimestamp()
         })
       } else {
         await setDoc(healthRecordRef, {
           patientId: patient.id,
-          familyVisibleUpdates: [cleanFamilyUpdate],
-          clinicalNotes: [],
+          currentFamilyVisibleUpdate: cleanFamilyUpdate, // Single object, not array
           lastUpdated: serverTimestamp()
         })
       }
@@ -372,15 +369,14 @@ export function PatientHealthModal({ isOpen, onClose, patient, onUpdate }: Patie
       
       if (healthRecordSnap.exists()) {
         const data = healthRecordSnap.data()
-        const familyUpdates = data.familyVisibleUpdates || []
-        const latestUpdate = familyUpdates[familyUpdates.length - 1]
+        const currentFamilyUpdate = data.currentFamilyVisibleUpdate
         
-        if (latestUpdate) {
-          const updateDate = new Date(latestUpdate.timestamp)
+        if (currentFamilyUpdate) {
+          const updateDate = new Date(currentFamilyUpdate.timestamp)
           const today = new Date()
           
           if (updateDate.toDateString() === today.toDateString()) {
-            todayFamilyUpdate = latestUpdate
+            todayFamilyUpdate = currentFamilyUpdate
           }
         }
       }

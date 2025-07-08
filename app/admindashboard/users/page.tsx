@@ -109,8 +109,8 @@ export default function UsersPage() {
             onClick={handleCreateUser}
             className="bg-[#A0C878] hover:bg-[#8AB868] text-white"
           >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create User
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create User
           </Button>
         </div>
 

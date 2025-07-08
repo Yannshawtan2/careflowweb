@@ -23,8 +23,8 @@ const DashboardPage: React.FC = () => {
                 const patientsSnapshot = await getDocs(collection(db, 'patients'));
                 const patientsData = patientsSnapshot.docs
                     .map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
+                    id: doc.id,
+                    ...doc.data()
                     } as any)) as Patient[];
 
                 // Fetch health records
@@ -204,20 +204,20 @@ const DashboardPage: React.FC = () => {
                                             <p className="text-sm text-muted-foreground">
                                                 Last updated: {lastUpdate.toLocaleDateString()}
                                             </p>
-                                        </div>
+                            </div>
                                         <Badge variant="outline" className="bg-green-100 border-green-300 text-green-800">
                                             Updated
                                         </Badge>
-                                    </div>
+                    </div>
                                 );
                             })}
-                        </div>
+                            </div>
                     ) : (
                         <div className="text-center py-8">
                             <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-muted-foreground">No recent activity</p>
                             <p className="text-sm text-muted-foreground">Start by adding patients and updating their health records</p>
-                        </div>
+                    </div>
                     )}
                 </CardContent>
             </Card>

@@ -453,9 +453,9 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
             // If creating a patient directly, include patient data in the user record
             toast.success("Patient created successfully")
           } else {
-            toast('User created successfully', {
-              description: `${data.name} has been added as a ${data.role}`,
-            });
+          toast('User created successfully', {
+            description: `${data.name} has been added as a ${data.role}`,
+          });
           }
           
           resetForm()
@@ -491,32 +491,32 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
           </Button>
         </div>
 
-        <Form {...form}>
+    <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
             {/* Basic User Information */}
-            <div className="space-y-4">
-              <div className="rounded-md bg-[#DDEB9D]/30 p-4">
-                <h2 className="mb-4 text-lg font-medium">Basic Information</h2>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter name" {...field} className="bg-white border-[#DDEB9D] focus:ring-[#A0C878]" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                      <FormLabel>Select User Type</FormLabel>
+        <div className="space-y-4">
+          <div className="rounded-md bg-[#DDEB9D]/30 p-4">
+            <h2 className="mb-4 text-lg font-medium">Basic Information</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter name" {...field} className="bg-white border-[#DDEB9D] focus:ring-[#A0C878]" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                  <FormLabel>Select User Type</FormLabel>
                       <Select 
                         onValueChange={(value) => {
                           field.onChange(value)
@@ -525,90 +525,90 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
                         value={currentRole || field.value || ''}
                         key={`role-${formKey}-${currentRole || 'empty'}`} // Force re-render when value changes
                       >
+                    <FormControl>
+                      <SelectTrigger className="bg-white border-[#DDEB9D] focus:ring-[#A0C878]">
+                        <SelectValue placeholder="Select user type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="admin">Administrator</SelectItem>
+                      <SelectItem value="guardian">Guardian</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="name@example.com" {...field} className="bg-white border-[#DDEB9D] focus:ring-[#A0C878]" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="(123) 456-7890" {...field} className="bg-white border-[#DDEB9D] focus:ring-[#A0C878]" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Start Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
                         <FormControl>
-                          <SelectTrigger className="bg-white border-[#DDEB9D] focus:ring-[#A0C878]">
-                            <SelectValue placeholder="Select user type" />
-                          </SelectTrigger>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-[240px] pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="staff">Staff</SelectItem>
-                          <SelectItem value="admin">Administrator</SelectItem>
-                          <SelectItem value="guardian">Guardian</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="name@example.com" {...field} className="bg-white border-[#DDEB9D] focus:ring-[#A0C878]" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="(123) 456-7890" {...field} className="bg-white border-[#DDEB9D] focus:ring-[#A0C878]" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="startDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Start Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-[240px] pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
                             <CalendarComponent
-                              mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={date => field.onChange(date ? date.toISOString() : "")}
-                              disabled={(date: Date) =>
-                                date > new Date() || date < new Date("1900-01-01")
-                              }
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={date => field.onChange(date ? date.toISOString() : "")}
+                          disabled={(date: Date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
 
-                        <div className="rounded-md bg-[#DDEB9D]/30 p-4">
+          <div className="rounded-md bg-[#DDEB9D]/30 p-4">
             <h2 className="mb-4 text-lg font-medium">Security</h2>
             <div className="grid gap-4 md:grid-cols-2">
               <FormField
@@ -658,7 +658,7 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
               />
             </div>
           </div>
-            </div>
+        </div>
 
             {/* Patient Information Section - Show when guardian or patient is selected */}
             {showPatientForm && (
@@ -832,27 +832,27 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
             )}
 
             <div className="flex justify-end space-x-4 pt-6 border-t">
-              <Button
-                type="button"
-                variant="outline"
+          <Button
+            type="button"
+            variant="outline"
                 onClick={onClose}
-                className="border-[#DDEB9D] bg-white hover:bg-[#DDEB9D] hover:text-black"
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting} className="bg-[#A0C878] hover:bg-[#8AB868] text-white">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {mode === "update" ? "Updating..." : "Creating..."}
-                  </>
-                ) : (
-                  mode === "update" ? "Update User" : "Create User"
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
+            className="border-[#DDEB9D] bg-white hover:bg-[#DDEB9D] hover:text-black"
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting} className="bg-[#A0C878] hover:bg-[#8AB868] text-white">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {mode === "update" ? "Updating..." : "Creating..."}
+              </>
+            ) : (
+              mode === "update" ? "Update User" : "Create User"
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
       </div>
     </div>
   )

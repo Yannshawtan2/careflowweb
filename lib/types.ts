@@ -134,7 +134,7 @@ export interface InventoryItem {
   export interface HealthRecord {
     id: string
     patientId: string
-    familyVisibleUpdates: FamilyVisibleUpdate[]
+    currentFamilyVisibleUpdate?: FamilyVisibleUpdate // Single current state instead of array
     lastUpdated: string
   }
 

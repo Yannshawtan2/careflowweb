@@ -129,16 +129,16 @@ export default function PatientsPage() {
     
     if (!record) return null
 
-    const latestFamilyUpdate = record.familyVisibleUpdates[record.familyVisibleUpdates.length - 1]
+    const currentFamilyUpdate = record.currentFamilyVisibleUpdate
     const latestClinicalNote = patientClinicalNotes.length > 0 
       ? patientClinicalNotes.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
       : null
 
     return {
-      lastFamilyUpdate: latestFamilyUpdate?.timestamp,
+      lastFamilyUpdate: currentFamilyUpdate?.timestamp,
       lastClinicalNote: latestClinicalNote?.timestamp,
-      mood: latestFamilyUpdate?.mood,
-      vitals: latestFamilyUpdate?.vitals
+      mood: currentFamilyUpdate?.mood,
+      vitals: currentFamilyUpdate?.vitals
     }
   }
 

@@ -68,7 +68,7 @@ interface Patient {
 interface HealthRecord {
   id: string
   patientId: string
-  familyVisibleUpdates: FamilyVisibleUpdate[]
+  currentFamilyVisibleUpdate?: FamilyVisibleUpdate // Single current state instead of historical array
   clinicalNotes: ClinicalNote[]
   lastUpdated: string
 }

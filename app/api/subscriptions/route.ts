@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Create a price object for the subscription
     const price = await stripe.prices.create({
       unit_amount: Math.round(amount * 100), // Convert to cents
-      currency: 'usd',
+      currency: 'myr',
       recurring: {
         interval: intervalMap[frequency] as 'month' | 'year',
         interval_count: frequency === 'quarterly' ? 3 : 1,
@@ -88,29 +88,14 @@ export async function POST(request: NextRequest) {
     }
 
     const paymentIntent = invoice.payment_intent
-    if (!paymentIntent || !paymentIntent.client_secret) {
-      // Fallback: Create a separate payment intent
-      const fallbackPaymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100),
-        currency: 'usd',
-        customer: stripeCustomerId,
-        metadata: {
-          subscriptionId: subscription.id,
-          guardianId: guardianId,
-        },
-      })
-      
-      return NextResponse.json({
-        subscriptionId: subscription.id,
-        clientSecret: fallbackPaymentIntent.client_secret,
-        customerId: stripeCustomerId,
-      })
-    }
-
+    
+    // Return subscription details - no fallback payment intent needed
     return NextResponse.json({
       subscriptionId: subscription.id,
-      clientSecret: paymentIntent.client_secret,
+      clientSecret: paymentIntent?.client_secret || null,
       customerId: stripeCustomerId,
+      status: subscription.status,
+      requiresPaymentMethod: !paymentIntent?.client_secret
     })
   } catch (error: any) {
     console.error('Subscription creation error:', error)

@@ -241,21 +241,21 @@ export async function PUT(req: NextRequest) {
     } else {
       // Update regular user
       // Update Auth fields (only if password is provided)
-      const updateAuth: any = { displayName: name, email, phoneNumber: phone };
+    const updateAuth: any = { displayName: name, email, phoneNumber: phone };
       if (password && password.trim() !== '') {
         updateAuth.password = password;
       }
-      await adminAuth.updateUser(uid, updateAuth);
+    await adminAuth.updateUser(uid, updateAuth);
       
       // Prepare Firestore update data
       const updateData: any = {
-        name,
-        email,
-        phone,
-        role,
-        startDate,
-        permissions: permissions || [],
-        updatedAt: new Date().toISOString(),
+      name,
+      email,
+      phone,
+      role,
+      startDate,
+      permissions: permissions || [],
+      updatedAt: new Date().toISOString(),
       };
       
       // Update Firestore

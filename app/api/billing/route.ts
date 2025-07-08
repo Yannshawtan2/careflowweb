@@ -41,21 +41,12 @@ export async function POST(req: Request) {
     });
 
     // Store subscription in Firestore
-    const subscriptionData = {
-      guardianId,
-      stripeSubscriptionId: subscription.id,
-      amount,
-      frequency,
-      description,
-      startDate: new Date(startDate),
-      status: subscription.status,
-      createdAt: new Date(),
-    };
-
-    const subscriptionRef = await adminDb.collection('subscriptions').add(subscriptionData);
+    // const subscriptionRef = await adminDb.collection('subscriptions').add(subscriptionData);
+    //
+    // Only the Stripe webhook should write subscription records to Firestore to avoid duplicates.
 
     return NextResponse.json({
-      subscriptionId: subscriptionRef.id,
+      subscriptionId: subscription.id, // Return the Stripe subscription ID
       clientSecret: (subscription.latest_invoice as any).payment_intent.client_secret,
     });
   } catch (error: any) {

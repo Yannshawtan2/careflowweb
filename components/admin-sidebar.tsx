@@ -20,7 +20,7 @@ export function AdminSidebar() {
           <NavItem href="/admindashboard/users" icon={Users}>
             Users
           </NavItem>
-          <NavItem href="/inventory" icon={Package}>
+          <NavItem href="/admindashboard/inventory" icon={Package}>
             Inventory
           </NavItem>
           <NavItem href="/admindashboard/billing" icon={DollarSign}>

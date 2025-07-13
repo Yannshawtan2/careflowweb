@@ -84,22 +84,41 @@ export function PatientCard({
 
   const handleEmergencyContact = async () => {
     try {
+      console.log('=== EMERGENCY CONTACT CLICKED ===');
+      console.log('Patient data:', {
+        id: patient.id,
+        name: patient.name,
+        guardianId: patient.guardianId,
+        guardianName: patient.guardianName
+      });
+      
+      const requestData = {
+        guardianId: patient.guardianId,
+        patientName: patient.name,
+        patientId: patient.id,
+      };
+      
+      console.log('Sending emergency request with data:', requestData);
+      
       const res = await fetch('/api/notify-guardian', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guardianId: patient.guardianId,
-          patientName: patient.name,
-          patientId: patient.id,
-        }),
+        body: JSON.stringify(requestData),
       });
+      
+      console.log('Emergency API response status:', res.status);
+      
       if (res.ok) {
+        const responseData = await res.json();
+        console.log('Emergency API response:', responseData);
         toast.success('Emergency alert sent to guardian!');
       } else {
         const data = await res.json();
+        console.log('Emergency API error:', data);
         toast.error(data.error || 'Failed to send emergency alert.');
       }
     } catch (err) {
+      console.error('Error in handleEmergencyContact:', err);
       toast.error('Failed to send emergency alert.');
     }
   };

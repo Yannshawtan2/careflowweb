@@ -6,7 +6,7 @@ import { DollarSign, Home, Package, BookHeart, Users, Heart } from "lucide-react
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
-export function AdminSidebar() {
+export function StaffSidebar() {
   return (
     <div className="hidden border-r border-[#DDEB9D] bg-[#FAF6E9] md:flex md:w-64 md:flex-col">
       <div className="flex flex-col space-y-2 p-4">
@@ -23,7 +23,7 @@ export function AdminSidebar() {
           <NavItem href="/staffdashboard/EHR" icon={BookHeart}>
             EHR
           </NavItem>
-          <NavItem href="/inventory" icon={Package}>
+          <NavItem href="/staffdashboard/inventory" icon={Package}>
             Inventory
           </NavItem>
           <NavItem href="/settings" icon={DollarSign}>

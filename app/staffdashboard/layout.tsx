@@ -1,6 +1,5 @@
 import { StaffHeader } from "@/components/StaffHeader"
-import { AdminSidebar } from "@/components/staff-sidebar"
-
+import { StaffSidebar } from "@/components/staff-sidebar"
 export default function StaffDashboardLayout({
   children,
 }: {
@@ -10,7 +9,7 @@ export default function StaffDashboardLayout({
     <div className="min-h-screen bg-[#FAF6E9]">
       <StaffHeader />
       <div className="flex">
-        <AdminSidebar />
+        <StaffSidebar />
         <main className="flex-1 p-6">
           {children}
         </main>

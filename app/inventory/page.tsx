@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 import { InventoryDashboard } from "@/components/inventory/inventory-dashboard"
-import { AdminSidebar } from "@/components/admin-sidebar"
+import { DynamicSidebar } from "@/components/dynamic-sidebar"
 
 export const metadata: Metadata = {
   title: "Inventory Management",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function InventoryPage() {
   return (
     <div className="flex min-h-screen bg-[#FFFDF6]">
-      <AdminSidebar />
+      <DynamicSidebar />
       <div className="flex-1 p-4 md:p-8 pt-6 overflow-y-auto">
         <InventoryDashboard />
       </div>

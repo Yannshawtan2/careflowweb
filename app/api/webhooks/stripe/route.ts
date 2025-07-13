@@ -1,129 +1,128 @@
-import { headers } from "next/headers";
-import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
-import { adminDb } from "@/lib/firebase-admin";
+import { NextRequest, NextResponse } from 'next/server'
+import { stripe } from '@/lib/stripe'
+import { adminDb } from '@/lib/firebase-admin'
+import { headers } from 'next/headers'
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.text();
-    const signature = (await headers()).get("stripe-signature")!;
+    const body = await request.text()
+    const signature = (await headers()).get('stripe-signature')
 
-    let event;
-    try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } catch (err: any) {
-      return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+    if (!signature) {
+      return NextResponse.json(
+        { error: 'No signature found' },
+        { status: 400 }
+      )
     }
+
+    let event
+    try {
+      event = stripe.webhooks.constructEvent(
+        body,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET || ''
+      )
+    } catch (err: any) {
+      console.error('Webhook signature verification failed:', err.message)
+      return NextResponse.json(
+        { error: 'Invalid signature' },
+        { status: 400 }
+      )
+    }
+
+    console.log('Received webhook event:', event.type)
 
     // Handle the event
     switch (event.type) {
-      case "invoice.payment_succeeded":
-        await handleInvoicePaymentSucceeded(event.data.object);
-        break;
-      case "invoice.payment_failed":
-        await handleInvoicePaymentFailed(event.data.object);
-        break;
-      case "customer.subscription.updated":
-        await handleSubscriptionUpdated(event.data.object);
-        break;
-      case "customer.subscription.deleted":
-        await handleSubscriptionDeleted(event.data.object);
-        break;
+      case 'invoice.payment_succeeded':
+        await handleInvoicePaymentSucceeded(event.data.object)
+        break
+      case 'invoice.payment_failed':
+        await handleInvoicePaymentFailed(event.data.object)
+        break
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object)
+        break
+      case 'customer.subscription.deleted':
+        await handleSubscriptionDeleted(event.data.object)
+        break
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        console.log(`Unhandled event type: ${event.type}`)
     }
 
-    return NextResponse.json({ received: true });
+    return NextResponse.json({ received: true })
   } catch (error: any) {
-    console.error("Error processing webhook:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Webhook error:', error)
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    )
   }
 }
 
 async function handleInvoicePaymentSucceeded(invoice: any) {
-  // Record successful payment in Firestore
-  const paymentData = {
-    subscriptionId: invoice.subscription,
-    amount: invoice.amount_paid / 100, // Convert from cents
-    status: "completed",
-    invoiceId: invoice.id,
-    paymentDate: new Date(),
-  };
-
-  await adminDb.collection('payments').add(paymentData);
-
-  // Update subscription status if needed
-  const subscriptionSnapshot = await adminDb
-    .collection('subscriptions')
-    .where('stripeSubscriptionId', '==', invoice.subscription)
-    .get();
+  console.log('Invoice payment succeeded:', invoice.id)
   
-  if (!subscriptionSnapshot.empty) {
-    const subscriptionDoc = subscriptionSnapshot.docs[0];
-    await subscriptionDoc.ref.update({
-      status: "active",
-      lastPaymentDate: new Date(),
-    });
+  if (invoice.subscription) {
+    // Update subscription status in your database if needed
+    console.log('Subscription payment succeeded:', invoice.subscription)
   }
 }
 
 async function handleInvoicePaymentFailed(invoice: any) {
-  // Record failed payment in Firestore
-  const paymentData = {
-    subscriptionId: invoice.subscription,
-    amount: invoice.amount_due / 100,
-    status: "failed",
-    invoiceId: invoice.id,
-    failureReason: invoice.last_payment_error?.message || "Unknown error",
-    paymentDate: new Date(),
-  };
-
-  await adminDb.collection('payments').add(paymentData);
-
-  // Update subscription status
-  const subscriptionSnapshot = await adminDb
-    .collection('subscriptions')
-    .where('stripeSubscriptionId', '==', invoice.subscription)
-    .get();
+  console.log('Invoice payment failed:', invoice.id)
   
-  if (!subscriptionSnapshot.empty) {
-    const subscriptionDoc = subscriptionSnapshot.docs[0];
-    await subscriptionDoc.ref.update({
-      status: "past_due",
-      lastPaymentAttempt: new Date(),
-    });
+  if (invoice.subscription) {
+    // Handle failed payment
+    console.log('Subscription payment failed:', invoice.subscription)
   }
 }
 
 async function handleSubscriptionUpdated(subscription: any) {
-  const subscriptionSnapshot = await adminDb
-    .collection('subscriptions')
-    .where('stripeSubscriptionId', '==', subscription.id)
-    .get();
+  console.log('Subscription updated:', subscription.id, subscription.status)
   
-  if (!subscriptionSnapshot.empty) {
-    const subscriptionDoc = subscriptionSnapshot.docs[0];
-    await subscriptionDoc.ref.update({
-      status: subscription.status,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      updatedAt: new Date(),
-    });
+  // Update subscription in your database
+  try {
+    // Find the user with this subscription
+    const usersSnapshot = await adminDb.collection('users').get()
+    
+    for (const doc of usersSnapshot.docs) {
+      const userData = doc.data()
+      if (userData.stripeCustomerId === subscription.customer) {
+        // Update user's subscription status
+        await doc.ref.update({
+          'subscriptionStatus': subscription.status,
+          'subscriptionId': subscription.id,
+          'lastUpdated': new Date(),
+        })
+        console.log('Updated user subscription status:', doc.id, subscription.status)
+        break
+      }
+    }
+  } catch (error) {
+    console.error('Error updating subscription in database:', error)
   }
 }
 
 async function handleSubscriptionDeleted(subscription: any) {
-  const subscriptionSnapshot = await adminDb
-    .collection('subscriptions')
-    .where('stripeSubscriptionId', '==', subscription.id)
-    .get();
+  console.log('Subscription deleted:', subscription.id)
   
-  if (!subscriptionSnapshot.empty) {
-    const subscriptionDoc = subscriptionSnapshot.docs[0];
-    await subscriptionDoc.ref.update({
-      status: "cancelled",
-      cancelledAt: new Date(),
-    });
+  // Handle subscription deletion
+  try {
+    const usersSnapshot = await adminDb.collection('users').get()
+    
+    for (const doc of usersSnapshot.docs) {
+      const userData = doc.data()
+      if (userData.stripeCustomerId === subscription.customer) {
+        await doc.ref.update({
+          'subscriptionStatus': 'canceled',
+          'lastUpdated': new Date(),
+        })
+        console.log('Marked user subscription as canceled:', doc.id)
+        break
+      }
+    }
+  } catch (error) {
+    console.error('Error handling subscription deletion:', error)
   }
 } 

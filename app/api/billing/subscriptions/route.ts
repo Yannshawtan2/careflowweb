@@ -58,6 +58,9 @@ export async function GET(request: NextRequest) {
           description: price?.product_data?.name || 'Subscription',
           createdAt,
           stripeCustomerId: customer.id,
+          cancelAt: subscription.cancel_at 
+            ? new Date(subscription.cancel_at * 1000).toISOString().split('T')[0]
+            : undefined,
         }
       } catch (error) {
         console.error('Error transforming subscription:', sub.id, error)
@@ -73,6 +76,7 @@ export async function GET(request: NextRequest) {
           description: 'Subscription',
           createdAt: new Date().toISOString().split('T')[0],
           stripeCustomerId: 'unknown',
+          cancelAt: undefined,
         }
       }
     })

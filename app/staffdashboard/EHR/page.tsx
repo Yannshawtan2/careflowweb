@@ -204,6 +204,9 @@ export default function EHRPage() {
         }
       })
 
+      // Debug: log the selectedNote id and object
+      console.log('Updating note with id:', selectedNote.id, selectedNote);
+
       const response = await fetch(`/api/clinical-notes/${selectedNote.id}`, {
         method: 'PUT',
         headers: {

@@ -20,10 +20,14 @@ export async function GET(request: NextRequest) {
       .orderBy('timestamp', 'desc')
       .get()
 
-    const clinicalNotes = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    const clinicalNotes = snapshot.docs.map(doc => {
+      const data = doc.data();
+      if ('id' in data) delete data.id; // Remove any internal id field
+      return {
+        id: doc.id, // Firestore document ID
+        ...data
+      };
+    });
 
     return NextResponse.json({
       success: true,

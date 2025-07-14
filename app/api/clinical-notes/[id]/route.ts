@@ -1,85 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase-admin'
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
-    const body = await request.json()
-    const { assessmentType, assessmentData } = body
+    const { id } = await context.params;
+    const body = await request.json();
+    const { assessmentType, assessmentData } = body;
 
     if (!assessmentType || !assessmentData) {
-      return NextResponse.json(
-        { error: 'Assessment type and data are required' },
-        { status: 400 }
-      )
+      console.error('Missing assessmentType or assessmentData', { body });
+      return NextResponse.json({ success: false, error: 'Missing assessmentType or assessmentData' }, { status: 400 });
     }
 
-    const noteRef = adminDb.collection('clinicalNotes').doc(id)
-    
-    // Check if the note exists
-    const noteSnap = await noteRef.get()
-    if (!noteSnap.exists) {
-      return NextResponse.json(
-        { error: 'Clinical note not found' },
-        { status: 404 }
-      )
+    const docRef = adminDb.collection('clinicalNotes').doc(id);
+    const docSnap = await docRef.get();
+    if (!docSnap.exists) {
+      console.error('Clinical note not found', { id });
+      return NextResponse.json({ success: false, error: 'Clinical note not found' }, { status: 404 });
     }
 
-    // Update the clinical note
-    await noteRef.update({
+    await docRef.update({
       assessmentType,
       assessmentData,
-      updatedAt: new Date().toISOString()
-    })
+      updatedAt: new Date().toISOString(),
+    });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Clinical note updated successfully'
-    })
-
-  } catch (error) {
-    console.error('Error updating clinical note:', error)
-    return NextResponse.json(
-      { error: 'Failed to update clinical note' },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('PUT /api/clinical-notes/[id] error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 400 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
-
-    const noteRef = adminDb.collection('clinicalNotes').doc(id)
-    
-    // Check if the note exists
-    const noteSnap = await noteRef.get()
-    if (!noteSnap.exists) {
-      return NextResponse.json(
-        { error: 'Clinical note not found' },
-        { status: 404 }
-      )
-    }
-
-    // Delete the clinical note
-    await noteRef.delete()
-
-    return NextResponse.json({
-      success: true,
-      message: 'Clinical note deleted successfully'
-    })
-
-  } catch (error) {
-    console.error('Error deleting clinical note:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete clinical note' },
-      { status: 500 }
-    )
+    const { id } = await context.params
+    await adminDb.collection('clinicalNotes').doc(id).delete()
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 400 })
   }
 } 

@@ -15,10 +15,11 @@ export interface InventoryItem {
     guardianName: string
     amount: number
     frequency: "monthly" | "quarterly" | "yearly"
-    status: "active" | "paused" | "cancelled"
+    status: "active" | "paused" | "cancelled" | "cancel_at_period_end" | "incomplete"
     nextPaymentDate: string
     description: string
     createdAt: string
+    cancelAt?: string
   }
   
   export interface BillingTransaction {
@@ -147,3 +148,22 @@ export interface InventoryItem {
     specialization: string[]
     status: "active" | "inactive"
   }
+
+export interface DonationCampaign {
+  id: string;
+  title: string;
+  description: string;
+  goal: number;
+  imageUrl?: string;
+  createdAt: string;
+  active: boolean;
+}
+
+export interface Donation {
+  id: string;
+  campaignId: string;
+  amount: number;
+  donorEmail?: string;
+  createdAt: string;
+  stripeSessionId: string;
+}

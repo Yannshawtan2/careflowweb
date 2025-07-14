@@ -1,47 +1,70 @@
-import { Package } from "lucide-react"
+"use client"
 
+import { useState, useEffect } from "react"
+import { Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-
-const inventoryAlerts = [
-  {
-    id: 1,
-    name: "Cleaning Supplies",
-    currentStock: 5,
-    minRequired: 20,
-    lastOrdered: "2023-04-15",
-  },
-  {
-    id: 2,
-    name: "Light Bulbs",
-    currentStock: 8,
-    minRequired: 30,
-    lastOrdered: "2023-05-02",
-  },
-  {
-    id: 3,
-    name: "Air Filters",
-    currentStock: 3,
-    minRequired: 15,
-    lastOrdered: "2023-03-28",
-  },
-  {
-    id: 4,
-    name: "Maintenance Tools",
-    currentStock: 2,
-    minRequired: 10,
-    lastOrdered: "2023-04-10",
-  },
-  {
-    id: 5,
-    name: "Office Supplies",
-    currentStock: 7,
-    minRequired: 25,
-    lastOrdered: "2023-05-05",
-  },
-]
+import type { InventoryItem } from "@/lib/types"
+import { toast } from "sonner"
 
 export function InventoryAlerts() {
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchInventoryItems = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/inventory')
+        const data = await response.json()
+        
+        if (data.success) {
+          setInventoryItems(data.items)
+        } else {
+          throw new Error(data.error || 'Failed to fetch inventory')
+        }
+      } catch (error: any) {
+        console.error('Error fetching inventory:', error)
+        toast.error("Error loading inventory data")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchInventoryItems()
+  }, [])
+
+  // Filter items that need restocking (quantity <= minimumQuantity)
+  const itemsNeedingRestock = inventoryItems.filter(item => item.quantity <= item.minimumQuantity)
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#A0C878] mr-2"></div>
+        Loading inventory alerts...
+      </div>
+    )
+  }
+
+  if (itemsNeedingRestock.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-32 text-center">
+        <Package className="h-8 w-8 text-green-500 mb-2" />
+        <p className="text-sm text-muted-foreground">No inventory alerts</p>
+        <p className="text-xs text-muted-foreground">All items are well stocked</p>
+      </div>
+    )
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -49,12 +72,11 @@ export function InventoryAlerts() {
           <TableHead>Item</TableHead>
           <TableHead className="text-right">Current Stock</TableHead>
           <TableHead className="text-right">Min Required</TableHead>
-          <TableHead className="text-right">Last Ordered</TableHead>
-          <TableHead className="text-right">Action</TableHead>
+          <TableHead className="text-right">Unit</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {inventoryAlerts.map((item) => (
+        {itemsNeedingRestock.map((item) => (
           <TableRow key={item.id}>
             <TableCell className="font-medium">
               <div className="flex items-center gap-2">
@@ -62,14 +84,13 @@ export function InventoryAlerts() {
                 {item.name}
               </div>
             </TableCell>
-            <TableCell className="text-right">{item.currentStock}</TableCell>
-            <TableCell className="text-right">{item.minRequired}</TableCell>
-            <TableCell className="text-right">{item.lastOrdered}</TableCell>
             <TableCell className="text-right">
-              <Button size="sm" className="bg-[#A0C878] hover:bg-[#8AB868] text-white">
-                Reorder
-              </Button>
+              <span className={item.quantity <= item.minimumQuantity ? "text-red-600 font-semibold" : ""}>
+                {item.quantity}
+              </span>
             </TableCell>
+            <TableCell className="text-right">{item.minimumQuantity}</TableCell>
+            <TableCell className="text-right">{item.unit}</TableCell>
           </TableRow>
         ))}
       </TableBody>

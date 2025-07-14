@@ -13,6 +13,13 @@ export interface UpdateSubscriptionData {
   status: "active" | "paused" | "cancelled";
 }
 
+export interface EditSubscriptionData {
+  subscriptionId: string;
+  amount?: number;
+  frequency?: "monthly" | "quarterly" | "yearly";
+  description?: string;
+}
+
 export interface CustomerData {
   guardianId: string;
   email: string;
@@ -82,6 +89,42 @@ export const billingService = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || "Failed to update subscription");
+    }
+
+    return response.json();
+  },
+
+  // Edit subscription details (amount, frequency, description)
+  async editSubscription(data: EditSubscriptionData) {
+    const response = await fetch("/api/billing/edit", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to edit subscription");
+    }
+
+    return response.json();
+  },
+
+  // Delete subscription
+  async deleteSubscription(subscriptionId: string) {
+    const response = await fetch(`/api/billing/delete`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ subscriptionId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to delete subscription");
     }
 
     return response.json();

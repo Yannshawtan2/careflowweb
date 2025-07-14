@@ -2,14 +2,17 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-// import { AdminHeader } from '@/components/AdminHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { InventoryAlerts } from '@/components/inventory-alerts';
-import { OverduePayments } from '@/components/overdue-payments';
+import { IncompleteSubscriptions } from '@/components/incomplete-subscriptions';
 import { AdminSidebar } from '@/components/admin-sidebar';
 import { AlertCircle, Building, DollarSign, Users } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import { billingService } from '@/lib/services/billing-service';
+import type { BillingSubscription } from '@/lib/types';
+import type { InventoryItem } from '@/lib/types';
+
 interface User {
   id: string;
   email: string;
@@ -25,6 +28,8 @@ interface StaffMember {
 const AdminDashboard: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [staff, setStaff] = useState<StaffMember[]>([]);
+    const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+    const [subscriptions, setSubscriptions] = useState<BillingSubscription[]>([]);
     const [loading, setLoading] = useState(true);
     const [authenticated, setAuthenticated] = useState(false);
     const [authMessage, setAuthMessage] = useState<string | null>(null);
@@ -69,7 +74,8 @@ const AdminDashboard: React.FC = () => {
                 }
 
                 setAuthenticated(true);
-                console.log('Fetching users data...');
+                console.log('Fetching dashboard data...');
+
                 // Fetch users data
                 const usersSnapshot = await getDocs(collection(db, 'users'));
                 const usersData = usersSnapshot.docs.map(doc => ({
@@ -79,7 +85,6 @@ const AdminDashboard: React.FC = () => {
                 console.log('Users data fetched:', usersData.length);
 
                 // Fetch staff data
-                console.log('Fetching staff data...');
                 const staffSnapshot = await getDocs(collection(db, 'staff'));
                 const staffData = staffSnapshot.docs.map(doc => ({
                     id: doc.id,
@@ -87,8 +92,20 @@ const AdminDashboard: React.FC = () => {
                 })) as StaffMember[];
                 console.log('Staff data fetched:', staffData.length);
 
+                // Fetch inventory data
+                const inventoryResponse = await fetch('/api/inventory');
+                const inventoryData = await inventoryResponse.json();
+                const inventoryItemsData = inventoryData.success ? inventoryData.items : [];
+                console.log('Inventory data fetched:', inventoryItemsData.length);
+
+                // Fetch subscriptions data
+                const subscriptionsData = await billingService.getSubscriptions();
+                console.log('Subscriptions data fetched:', subscriptionsData.length);
+
                 setUsers(usersData);
                 setStaff(staffData);
+                setInventoryItems(inventoryItemsData);
+                setSubscriptions(subscriptionsData);
             } catch (error) {
                 console.error('Error fetching data:', error);
                 setAuthMessage("Error loading dashboard data. Please try again.");
@@ -110,6 +127,15 @@ const AdminDashboard: React.FC = () => {
         console.log("Redirecting to login");
         window.location.href = "/login";
     };
+
+    // Calculate dashboard metrics
+    const totalResidences = users.filter(user => user.role === 'guardian').length;
+    const totalStaff = staff.length;
+    const inventoryAlerts = inventoryItems.filter(item => item.quantity <= item.minimumQuantity).length;
+    const incompleteSubscriptions = subscriptions.filter(sub => sub.status === 'incomplete').length;
+    const totalIncompleteAmount = subscriptions
+        .filter(sub => sub.status === 'incomplete')
+        .reduce((sum, sub) => sum + sub.amount, 0);
 
     if (loading) {
         return (
@@ -150,12 +176,6 @@ const AdminDashboard: React.FC = () => {
                       >
                         Overview
                       </TabsTrigger>
-                      <TabsTrigger
-                        value="analytics"
-                        className="data-[state=active]:bg-[#DDEB9D] data-[state=active]:text-black"
-                      >
-                        Analytics
-                      </TabsTrigger>
                     </TabsList>
                     <TabsContent value="overview" className="space-y-8">
                       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 justify-items-center">
@@ -165,10 +185,10 @@ const AdminDashboard: React.FC = () => {
                             <Building className="h-4 w-4 text-[#A0C878]" />
                           </CardHeader>
                           <CardContent>
-                            <div className="text-2xl font-bold">142</div>
-                            <p className="text-xs text-muted-foreground">+2 from last month</p>
+                            <div className="text-2xl font-bold">{totalResidences}</div>
+                            <p className="text-xs text-muted-foreground">Active guardian accounts</p>
                             <div className="mt-4">
-                            <Progress value={75} className="h-2 bg-[#FFFDF6] [&>div]:bg-[#A0C878]" />
+                            <Progress value={Math.min((totalResidences / 200) * 100, 100)} className="h-2 bg-[#FFFDF6] [&>div]:bg-[#A0C878]" />
                             </div>
                           </CardContent>
                         </Card>
@@ -178,10 +198,10 @@ const AdminDashboard: React.FC = () => {
                             <Users className="h-4 w-4 text-[#A0C878]" />
                           </CardHeader>
                           <CardContent>
-                            <div className="text-2xl font-bold">36</div>
-                            <p className="text-xs text-muted-foreground">+4 new hires this quarter</p>
+                            <div className="text-2xl font-bold">{totalStaff}</div>
+                            <p className="text-xs text-muted-foreground">Active staff accounts</p>
                             <div className="mt-4">
-                              <Progress value={75} className="h-2 bg-[#FFFDF6] [&>div]:bg-[#A0C878]" />
+                              <Progress value={Math.min((totalStaff / 50) * 100, 100)} className="h-2 bg-[#FFFDF6] [&>div]:bg-[#A0C878]" />
                             </div>
                           </CardContent>
                         </Card>
@@ -191,23 +211,23 @@ const AdminDashboard: React.FC = () => {
                             <AlertCircle className="h-4 w-4 text-[#A0C878]" />
                           </CardHeader>
                           <CardContent>
-                            <div className="text-2xl font-bold">8</div>
+                            <div className="text-2xl font-bold">{inventoryAlerts}</div>
                             <p className="text-xs text-muted-foreground">Items need restocking</p>
                             <div className="mt-4">
-                            <Progress value={75} className="h-2 bg-[#FFFDF6] [&>div]:bg-[#A0C878]" />
+                            <Progress value={Math.min((inventoryAlerts / 20) * 100, 100)} className="h-2 bg-[#FFFDF6] [&>div]:bg-[#A0C878]" />
                             </div>
                           </CardContent>
                         </Card>
                         <Card className="bg-[#FAF6E9] border-[#DDEB9D] w-full max-w-xs">
                           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Overdue Payments</CardTitle>
+                            <CardTitle className="text-sm font-medium">Incomplete Subscriptions</CardTitle>
                             <DollarSign className="h-4 w-4 text-[#A0C878]" />
                           </CardHeader>
                           <CardContent>
-                            <div className="text-2xl font-bold">$12,450</div>
-                            <p className="text-xs text-muted-foreground">12 accounts with overdue payments</p>
+                            <div className="text-2xl font-bold">${totalIncompleteAmount.toFixed(2)}</div>
+                            <p className="text-xs text-muted-foreground">{incompleteSubscriptions} pending payments</p>
                             <div className="mt-4">
-                              <Progress value={75} className="h-2 bg-[#FFFDF6] [&>div]:bg-[#A0C878]" />
+                              <Progress value={Math.min((incompleteSubscriptions / 10) * 100, 100)} className="h-2 bg-[#FFFDF6] [&>div]:bg-[#A0C878]" />
                             </div>
                           </CardContent>
                         </Card>
@@ -224,11 +244,11 @@ const AdminDashboard: React.FC = () => {
                         </Card>
                         <Card className="col-span-3 bg-[#FAF6E9] border-[#DDEB9D] w-full max-w-xl">
                           <CardHeader>
-                            <CardTitle>Overdue Payments</CardTitle>
-                            <CardDescription>Accounts with payments past due date</CardDescription>
+                            <CardTitle>Incomplete Subscriptions</CardTitle>
+                            <CardDescription>Subscriptions with pending payments</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            <OverduePayments />
+                            <IncompleteSubscriptions />
                           </CardContent>
                         </Card>
                       </div>

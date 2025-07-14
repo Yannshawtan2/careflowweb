@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { MoreHorizontal, ArrowUpDown, Download, Pause, X } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, Download, Pause, X, Trash2 } from "lucide-react"
 
 import {
   type ColumnDef,
@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { BillingSubscription } from "@/lib/types"
 import { billingService } from "@/lib/services/billing-service"
 import { toast } from "sonner"
+import { EditSubscriptionModal } from "./edit-subscription-modal"
 
 export function BillingPlansTable() {
   const [sorting, setSorting] = useState<SortingState>([])
@@ -34,23 +35,23 @@ export function BillingPlansTable() {
   const [subscriptions, setSubscriptions] = useState<BillingSubscription[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchSubscriptions = async () => {
-      try {
-        setIsLoading(true)
-        const data = await billingService.getSubscriptions()
-        setSubscriptions(data)
-      } catch (error: any) {
-        console.error('Error fetching subscriptions:', error)
-        toast.error("Error loading subscriptions", {
-          description: "Failed to load subscription data. Please try again.",
-        })
-      } finally {
-        setIsLoading(false)
-      }
+  const refreshSubscriptions = async () => {
+    try {
+      setIsLoading(true)
+      const data = await billingService.getSubscriptions()
+      setSubscriptions(data)
+    } catch (error: any) {
+      console.error('Error fetching subscriptions:', error)
+      toast.error("Error loading subscriptions", {
+        description: "Failed to load subscription data. Please try again.",
+      })
+    } finally {
+      setIsLoading(false)
     }
+  }
 
-    fetchSubscriptions()
+  useEffect(() => {
+    refreshSubscriptions()
   }, [])
 
   const getStatusBadge = (status: string) => {
@@ -78,7 +79,7 @@ export function BillingPlansTable() {
       })
 
       // Refresh the table data
-      // You might want to implement a refresh mechanism here
+      refreshSubscriptions()
     } catch (error: any) {
       toast.error("Error updating subscription", {
         description: error.message || "Failed to update subscription status",
@@ -104,7 +105,7 @@ export function BillingPlansTable() {
       })
 
       // Refresh the table data
-      // You might want to implement a refresh mechanism here
+      refreshSubscriptions()
     } catch (error: any) {
       toast.error("Error updating subscriptions", {
         description: error.message || "Failed to update subscription statuses",
@@ -119,6 +120,57 @@ export function BillingPlansTable() {
       month: '2-digit',
       day: '2-digit'
     });
+  }
+
+  const handleDeleteSubscription = async (subscriptionId: string) => {
+    if (!confirm("Are you sure you want to cancel this subscription? It will remain active until the end of the current billing period.")) {
+      return
+    }
+
+    try {
+      await billingService.deleteSubscription(subscriptionId)
+      
+      toast.success("Subscription cancelled", {
+        description: "Subscription has been scheduled for cancellation at the end of the current billing period",
+      })
+
+      refreshSubscriptions()
+    } catch (error: any) {
+      toast.error("Error cancelling subscription", {
+        description: error.message || "Failed to cancel subscription",
+      })
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    const selectedSubscriptions = table.getFilteredSelectedRowModel().rows
+    
+    if (selectedSubscriptions.length === 0) {
+      toast.error("No subscriptions selected")
+      return
+    }
+
+    if (!confirm(`Are you sure you want to cancel ${selectedSubscriptions.length} subscription(s)? They will remain active until the end of their current billing periods.`)) {
+      return
+    }
+
+    try {
+      await Promise.all(
+        selectedSubscriptions.map((row) =>
+          billingService.deleteSubscription(row.original.id)
+        )
+      )
+
+      toast.success("Subscriptions cancelled", {
+        description: `${selectedSubscriptions.length} subscription(s) have been scheduled for cancellation at the end of their current billing periods`,
+      })
+
+      refreshSubscriptions()
+    } catch (error: any) {
+      toast.error("Error cancelling subscriptions", {
+        description: error.message || "Failed to cancel subscriptions",
+      })
+    }
   }
 
   const columns: ColumnDef<BillingSubscription>[] = [
@@ -185,7 +237,18 @@ export function BillingPlansTable() {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => getStatusBadge(row.getValue("status")),
+      cell: ({ row }) => {
+        const status = row.getValue("status") as string
+        return getStatusBadge(status)
+      },
+    },
+    {
+      id: "cancelsOn",
+      header: "Cancels On",
+      cell: ({ row }) => {
+        const cancelAt = row.original.cancelAt
+        return cancelAt ? formatDate(cancelAt) : <span className="text-muted-foreground">None</span>
+      },
     },
     {
       accessorKey: "nextPaymentDate",
@@ -208,27 +271,41 @@ export function BillingPlansTable() {
         const subscription = row.original
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Edit Subscription</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusUpdate(subscription.id, "paused")}>
-                Pause Subscription
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="text-red-600"
-                onClick={() => handleStatusUpdate(subscription.id, "cancelled")}
-              >
-                Cancel Subscription
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center space-x-2">
+            <EditSubscriptionModal 
+              subscription={subscription} 
+              onSuccess={refreshSubscriptions}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => handleDeleteSubscription(subscription.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Cancel subscription</span>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>View Details</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusUpdate(subscription.id, "paused")}>
+                  Pause Subscription
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-red-600"
+                  onClick={() => handleStatusUpdate(subscription.id, "cancelled")}
+                >
+                  Cancel Subscription
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )
       },
     },
@@ -277,6 +354,7 @@ export function BillingPlansTable() {
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="paused">Paused</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="cancel_at_period_end">Scheduled to Cancel</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -299,6 +377,15 @@ export function BillingPlansTable() {
                 onClick={() => handleBulkStatusUpdate("cancelled")}
               >
                 <X className="mr-2 h-4 w-4" />
+                Cancel Selected ({selectedRows.length})
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-red-200 text-red-600 hover:bg-red-50"
+                onClick={handleBulkDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
                 Cancel Selected ({selectedRows.length})
               </Button>
             </>

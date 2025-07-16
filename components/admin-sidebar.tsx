@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 
 export function AdminSidebar() {
   return (
-    <div className="hidden border-r border-[#DDEB9D] bg-[#FAF6E9] md:flex md:w-64 md:flex-col">
+    <div className="border-r border-[#DDEB9D] bg-[#FAF6E9] w-64 flex flex-col">
       <div className="flex flex-col space-y-2 p-4">
         <div className="flex h-16 items-center px-4">
           <h2 className="text-lg font-bold text-[#A0C878]">Admin</h2>
@@ -26,8 +26,8 @@ export function AdminSidebar() {
           <NavItem href="/admindashboard/billing" icon={DollarSign}>
             Billing & Payments
           </NavItem>
-          <NavItem href="/settings" icon={Settings}>
-            Settings
+          <NavItem href="/admindashboard/donations/manage" icon={DollarSign}>
+            Campaigns
           </NavItem>
           <div className="pt-4">
             <button onClick={logout} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all text-muted-foreground hover:bg-[#DDEB9D] hover:text-black" >

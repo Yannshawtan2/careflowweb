@@ -153,7 +153,9 @@ export interface DonationCampaign {
   id: string;
   title: string;
   description: string;
-  goal: number;
+  goalAmount: number;
+  totalRaised: number;
+  donationCount: number;
   imageUrl?: string;
   createdAt: string;
   active: boolean;
@@ -163,7 +165,31 @@ export interface Donation {
   id: string;
   campaignId: string;
   amount: number;
-  donorEmail?: string;
-  createdAt: string;
-  stripeSessionId: string;
+  donorEmail: string;
+  timestamp: string;
+  paymentIntentId: string;
+  status: 'pending' | 'succeeded' | 'failed';
+  donorName?: string;
+  message?: string;
+  sessionId?: string;
+}
+
+export interface PaymentIntentRequest {
+  campaignId: string;
+  amount: number;
+  donorEmail: string;
+  donorName?: string;
+  message?: string;
+}
+
+export interface PaymentIntentResponse {
+  clientSecret: string;
+  paymentIntentId: string;
+}
+
+export interface DonationFormData {
+  amount: number;
+  donorEmail: string;
+  donorName?: string;
+  message?: string;
 }

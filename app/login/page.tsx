@@ -10,6 +10,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { generateToken } from '@/lib/jwt';
 import logo from '@/images/logo.png';
+import DefaultHeader from "@/components/DefaultHeader";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -215,6 +216,8 @@ const LoginPage = () => {
   };
 
   return (
+    <>
+    <DefaultHeader />
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
         {loginSuccess ? (
@@ -286,6 +289,7 @@ const LoginPage = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

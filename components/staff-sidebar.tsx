@@ -1,8 +1,9 @@
 "use client"
 
 import type React from "react"
+import { logout } from "@/lib/auth";
 
-import { DollarSign, Home, Package, BookHeart, Users, Heart } from "lucide-react"
+import { DollarSign, Home, Package, BookHeart, Users, Heart, LogOut } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
@@ -26,10 +27,13 @@ export function StaffSidebar() {
           <NavItem href="/staffdashboard/inventory" icon={Package}>
             Inventory
           </NavItem>
-          <NavItem href="/settings" icon={DollarSign}>
-            Settings
-          </NavItem>
         </nav>
+        <div className="pt-4">
+            <button onClick={logout} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all text-muted-foreground hover:bg-[#DDEB9D] hover:text-black" >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          </div>
       </div>
     </div>
   )

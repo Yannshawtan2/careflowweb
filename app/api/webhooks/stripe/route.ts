@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Received webhook event:', event.type)
+    console.log('Received webhook event:', event.type, 'ID:', event.id)
 
     // Handle the event
     switch (event.type) {
@@ -45,6 +45,17 @@ export async function POST(request: NextRequest) {
         break
       case 'customer.subscription.deleted':
         await handleSubscriptionDeleted(event.data.object)
+        break
+      case 'checkout.session.completed':
+        console.log('Processing checkout.session.completed event')
+        await handleCheckoutSessionCompleted(event.data.object)
+        break
+      case 'payment_intent.succeeded':
+        console.log('Processing payment_intent.succeeded event')
+        await handlePaymentIntentSucceeded(event.data.object)
+        break
+      case 'payment_intent.payment_failed':
+        await handlePaymentIntentFailed(event.data.object)
         break
       default:
         console.log(`Unhandled event type: ${event.type}`)
@@ -124,5 +135,173 @@ async function handleSubscriptionDeleted(subscription: any) {
     }
   } catch (error) {
     console.error('Error handling subscription deletion:', error)
+  }
+}
+
+async function handleCheckoutSessionCompleted(session: any) {
+  console.log('Checkout session completed:', session.id)
+  console.log('Session data:', JSON.stringify(session, null, 2))
+  
+  try {
+    // Find the donation record by session ID
+    const donationsSnapshot = await adminDb.collection('donations')
+      .where('sessionId', '==', session.id)
+      .get()
+
+    if (donationsSnapshot.empty) {
+      console.log('No donation record found for session:', session.id)
+      return
+    }
+
+    const donationDoc = donationsSnapshot.docs[0]
+    const donationData = donationDoc.data()
+    console.log('Found donation record:', donationData)
+
+    // Update donation status
+    await donationDoc.ref.update({
+      status: 'succeeded',
+      timestamp: new Date().toISOString(),
+    })
+
+    // Update campaign totals
+    const campaignRef = adminDb.collection('campaigns').doc(donationData.campaignId)
+    
+    // Use transaction to ensure atomic updates
+    await adminDb.runTransaction(async (transaction) => {
+      const campaignDoc = await transaction.get(campaignRef)
+      if (!campaignDoc.exists) {
+        throw new Error('Campaign not found')
+      }
+
+      const campaignData = campaignDoc.data()
+      const newTotalRaised = (campaignData?.totalRaised || 0) + donationData.amount
+      const newDonationCount = (campaignData?.donationCount || 0) + 1
+
+      console.log('Updating campaign totals:', {
+        currentTotal: campaignData?.totalRaised || 0,
+        newAmount: donationData.amount,
+        newTotal: newTotalRaised,
+        currentCount: campaignData?.donationCount || 0,
+        newCount: newDonationCount
+      })
+
+      transaction.update(campaignRef, {
+        totalRaised: newTotalRaised,
+        donationCount: newDonationCount,
+      })
+    })
+
+    console.log('Successfully updated donation and campaign totals:', {
+      donationId: donationDoc.id,
+      campaignId: donationData.campaignId,
+      amount: donationData.amount,
+    })
+  } catch (error) {
+    console.error('Error handling checkout session completion:', error)
+  }
+}
+
+async function handlePaymentIntentSucceeded(paymentIntent: any) {
+  console.log('Payment intent succeeded:', paymentIntent.id)
+  console.log('Payment intent data:', JSON.stringify(paymentIntent, null, 2))
+  
+  try {
+    // First try to find by payment intent ID
+    let donationsSnapshot = await adminDb.collection('donations')
+      .where('paymentIntentId', '==', paymentIntent.id)
+      .get()
+
+    // If not found, try to find by session ID (for checkout sessions)
+    if (donationsSnapshot.empty && paymentIntent.metadata?.session_id) {
+      console.log('Trying to find donation by session ID:', paymentIntent.metadata.session_id)
+      donationsSnapshot = await adminDb.collection('donations')
+        .where('sessionId', '==', paymentIntent.metadata.session_id)
+        .get()
+    }
+
+    if (donationsSnapshot.empty) {
+      console.log('No donation record found for payment intent:', paymentIntent.id)
+      return
+    }
+
+    const donationDoc = donationsSnapshot.docs[0]
+    const donationData = donationDoc.data()
+    console.log('Found donation record:', donationData)
+
+    // Check if already processed
+    if (donationData.status === 'succeeded') {
+      console.log('Donation already processed, skipping')
+      return
+    }
+
+    // Update donation status
+    await donationDoc.ref.update({
+      status: 'succeeded',
+      timestamp: new Date().toISOString(),
+    })
+
+    // Update campaign totals
+    const campaignRef = adminDb.collection('campaigns').doc(donationData.campaignId)
+    
+    // Use transaction to ensure atomic updates
+    await adminDb.runTransaction(async (transaction) => {
+      const campaignDoc = await transaction.get(campaignRef)
+      if (!campaignDoc.exists) {
+        throw new Error('Campaign not found')
+      }
+
+      const campaignData = campaignDoc.data()
+      const newTotalRaised = (campaignData?.totalRaised || 0) + donationData.amount
+      const newDonationCount = (campaignData?.donationCount || 0) + 1
+
+      console.log('Updating campaign totals:', {
+        currentTotal: campaignData?.totalRaised || 0,
+        newAmount: donationData.amount,
+        newTotal: newTotalRaised,
+        currentCount: campaignData?.donationCount || 0,
+        newCount: newDonationCount
+      })
+
+      transaction.update(campaignRef, {
+        totalRaised: newTotalRaised,
+        donationCount: newDonationCount,
+      })
+    })
+
+    console.log('Successfully updated donation and campaign totals:', {
+      donationId: donationDoc.id,
+      campaignId: donationData.campaignId,
+      amount: donationData.amount,
+    })
+  } catch (error) {
+    console.error('Error handling payment intent success:', error)
+  }
+}
+
+async function handlePaymentIntentFailed(paymentIntent: any) {
+  console.log('Payment intent failed:', paymentIntent.id)
+  
+  try {
+    // Find the donation record
+    const donationsSnapshot = await adminDb.collection('donations')
+      .where('paymentIntentId', '==', paymentIntent.id)
+      .get()
+
+    if (donationsSnapshot.empty) {
+      console.log('No donation record found for payment intent:', paymentIntent.id)
+      return
+    }
+
+    const donationDoc = donationsSnapshot.docs[0]
+
+    // Update donation status
+    await donationDoc.ref.update({
+      status: 'failed',
+      timestamp: new Date().toISOString(),
+    })
+
+    console.log('Marked donation as failed:', donationDoc.id)
+  } catch (error) {
+    console.error('Error handling payment intent failure:', error)
   }
 } 

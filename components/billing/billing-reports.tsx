@@ -90,10 +90,6 @@ export function BillingReports() {
               <SelectItem value="custom">Custom Range</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" className="border-[#DDEB9D] hover:bg-[#DDEB9D] hover:text-black">
-            <Download className="mr-2 h-4 w-4" />
-            Export PDF
-          </Button>
         </div>
       </div>
 
@@ -153,12 +149,6 @@ export function BillingReports() {
           <TabsTrigger value="revenue" className="data-[state=active]:bg-[#DDEB9D] data-[state=active]:text-black">
             Revenue Trends
           </TabsTrigger>
-          <TabsTrigger value="plans" className="data-[state=active]:bg-[#DDEB9D] data-[state=active]:text-black">
-            Plan Distribution
-          </TabsTrigger>
-          <TabsTrigger value="failures" className="data-[state=active]:bg-[#DDEB9D] data-[state=active]:text-black">
-            Failed Payments
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="revenue" className="space-y-4">
@@ -199,54 +189,6 @@ export function BillingReports() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="plans" className="space-y-4">
-          <Card className="bg-[#FAF6E9] border-[#DDEB9D]">
-            <CardHeader>
-              <CardTitle>Subscription Plan Distribution</CardTitle>
-              <CardDescription>Breakdown of subscription types</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <PieChart>
-                  <Pie
-                    data={planTypeData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={120}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {planTypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="failures" className="space-y-4">
-          <Card className="bg-[#FAF6E9] border-[#DDEB9D]">
-            <CardHeader>
-              <CardTitle>Failed Payment Analysis</CardTitle>
-              <CardDescription>Breakdown of payment failure reasons</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={failedPaymentsData} layout="horizontal">
-                  <XAxis type="number" />
-                  <YAxis dataKey="reason" type="category" width={120} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#ef4444" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   )

@@ -130,7 +130,7 @@ const AdminDashboard: React.FC = () => {
 
     // Calculate dashboard metrics
     const totalResidences = users.filter(user => user.role === 'guardian').length;
-    const totalStaff = staff.length;
+    const totalStaff = users.filter(user => user.role === 'staff').length;
     const inventoryAlerts = inventoryItems.filter(item => item.quantity <= item.minimumQuantity).length;
     const incompleteSubscriptions = subscriptions.filter(sub => sub.status === 'incomplete').length;
     const totalIncompleteAmount = subscriptions
@@ -163,11 +163,10 @@ const AdminDashboard: React.FC = () => {
     }
 
     return (
-        <>
-        <div className="flex min-h-screen bg-[#FFFDF6]">
+        <div className="flex min-h-screen w-full bg-[#FFFDF6]">
           <AdminSidebar />
           <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-              <div className="w-full max-w-6xl flex flex-col items-center">
+              <div className="w-full">
                   <Tabs defaultValue="overview" className="w-full">
                     <TabsList className="bg-[#FAF6E9] border border-[#DDEB9D] flex justify-center">
                       <TabsTrigger
@@ -178,8 +177,8 @@ const AdminDashboard: React.FC = () => {
                       </TabsTrigger>
                     </TabsList>
                     <TabsContent value="overview" className="space-y-8">
-                      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 justify-items-center">
-                        <Card className="bg-[#FAF6E9] border-[#DDEB9D] w-full max-w-xs">
+                      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                        <Card className="bg-[#FAF6E9] border-[#DDEB9D] w-full ">
                           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Residences</CardTitle>
                             <Building className="h-4 w-4 text-[#A0C878]" />
@@ -192,7 +191,7 @@ const AdminDashboard: React.FC = () => {
                             </div>
                           </CardContent>
                         </Card>
-                        <Card className="bg-[#FAF6E9] border-[#DDEB9D] w-full max-w-xs">
+                        <Card className="bg-[#FAF6E9] border-[#DDEB9D] w-full ">
                           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Staff Members</CardTitle>
                             <Users className="h-4 w-4 text-[#A0C878]" />
@@ -205,7 +204,7 @@ const AdminDashboard: React.FC = () => {
                             </div>
                           </CardContent>
                         </Card>
-                        <Card className="bg-[#FAF6E9] border-[#DDEB9D] w-full max-w-xs">
+                        <Card className="bg-[#FAF6E9] border-[#DDEB9D] w-full ">
                           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Inventory Alerts</CardTitle>
                             <AlertCircle className="h-4 w-4 text-[#A0C878]" />
@@ -218,7 +217,7 @@ const AdminDashboard: React.FC = () => {
                             </div>
                           </CardContent>
                         </Card>
-                        <Card className="bg-[#FAF6E9] border-[#DDEB9D] w-full max-w-xs">
+                        <Card className="bg-[#FAF6E9] border-[#DDEB9D] w-full ">
                           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Incomplete Subscriptions</CardTitle>
                             <DollarSign className="h-4 w-4 text-[#A0C878]" />
@@ -232,8 +231,8 @@ const AdminDashboard: React.FC = () => {
                           </CardContent>
                         </Card>
                       </div>
-                      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7 justify-items-center">
-                        <Card className="col-span-4 bg-[#FAF6E9] border-[#DDEB9D] w-full max-w-2xl">
+                      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
+                        <Card className="col-span-4 bg-[#FAF6E9] border-[#DDEB9D] w-full ">
                           <CardHeader>
                             <CardTitle>Inventory Restock Alerts</CardTitle>
                             <CardDescription>Items that need to be restocked soon</CardDescription>
@@ -242,7 +241,7 @@ const AdminDashboard: React.FC = () => {
                             <InventoryAlerts />
                           </CardContent>
                         </Card>
-                        <Card className="col-span-3 bg-[#FAF6E9] border-[#DDEB9D] w-full max-w-xl">
+                        <Card className="col-span-3 bg-[#FAF6E9] border-[#DDEB9D] w-full ">
                           <CardHeader>
                             <CardTitle>Incomplete Subscriptions</CardTitle>
                             <CardDescription>Subscriptions with pending payments</CardDescription>
@@ -257,7 +256,6 @@ const AdminDashboard: React.FC = () => {
               </div>
           </div>
         </div>
-        </>
     );
 };
 

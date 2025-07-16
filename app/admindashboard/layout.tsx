@@ -1,9 +1,9 @@
 'use client';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { StaffSidebar } from '@/components/staff-sidebar';
+import { AdminSidebar } from '@/components/admin-sidebar';
 import { useEffect } from 'react';
 
-export default function StaffDashboardLayout({
+export default function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -52,16 +52,16 @@ export default function StaffDashboardLayout({
     );
   }
 
-  if (user.role !== 'staff' && user.role !== 'admin') {
+  if (user.role !== 'admin') {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="mb-4">You don&apos;t have permission to access the staff dashboard.</p>
+          <p className="mb-4">You don&apos;t have permission to access the admin dashboard.</p>
           <div className="space-y-2">
             <button
               onClick={() => {
-                const redirectUrl = user.role === 'admin' ? '/admindashboard' : '/guardian-dashboard';
+                const redirectUrl = user.role === 'staff' ? '/staffdashboard' : '/guardian-dashboard';
                 window.location.href = redirectUrl;
               }}
               className="block w-full text-center bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
@@ -81,13 +81,11 @@ export default function StaffDashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF6E9]">
-      <div className="flex">
-        <StaffSidebar />
-        <main className="flex-1 p-6">
-          {children}
-        </main>
+    <div className="flex min-h-screen w-full bg-[#FFFDF6]">
+      <AdminSidebar />
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        {children}
       </div>
     </div>
   );
-} 
+}

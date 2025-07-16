@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 
 import { InventoryDashboard } from "@/components/inventory/inventory-dashboard"
-import { AdminSidebar } from "@/components/admin-sidebar"
 
 export const metadata: Metadata = {
   title: "Admin - Inventory Management",
@@ -11,7 +10,6 @@ export const metadata: Metadata = {
 export default function AdminInventoryPage() {
   return (
     <div className="flex min-h-screen bg-[#FFFDF6]">
-      <AdminSidebar />
       <div className="flex-1 p-4 md:p-8 pt-6 overflow-y-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#A0C878]">Admin Inventory Management</h1>

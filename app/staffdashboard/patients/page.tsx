@@ -183,10 +183,6 @@ export default function PatientsPage() {
           <h1 className="text-3xl font-bold text-[#A0C878]">Patient Management</h1>
           <p className="text-muted-foreground">Manage and monitor patient health data</p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} className="bg-[#A0C878] hover:bg-[#8AB868] text-white">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Patient
-        </Button>
       </div>
 
       {/* Statistics Cards */}
@@ -303,7 +299,6 @@ export default function PatientsPage() {
               patient={patient}
               healthSummary={healthSummary}
               onHealthUpdate={() => handleHealthUpdate(patient)}
-              onEmergencyContact={() => handleEmergencyContact(patient)}
               getCareLevelColor={getCareLevelColor}
               getStatusColor={getStatusColor}
             />

@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import type { DonationCampaign } from "@/lib/types"
 import { useRouter } from "next/navigation"
-import { AdminSidebar } from "@/components/admin-sidebar"
 
 const CLOUDINARY_UPLOAD_PRESET = "caredonations"
 const CLOUDINARY_CLOUD_NAME = "druki2lt2"
@@ -178,7 +177,6 @@ export default function ManageDonationCampaignsPage() {
 
   return (
     <div className="flex min-h-screen bg-[#FFFDF6]">
-      <AdminSidebar />
       <div className="flex-1 p-4 md:p-8 pt-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-8">

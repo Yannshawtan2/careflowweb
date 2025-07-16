@@ -1,32 +1,22 @@
 'use client';
-import { useRouter } from 'next/navigation';
 
 export const logout = async () => {
-  // Clear session storage
-  sessionStorage.removeItem('token');
-  sessionStorage.removeItem('userRole');
-  sessionStorage.removeItem('userId');
-  
-  // Clear cookies by expiring them
-  document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  
-  // Try to use the API to clear cookie
   try {
-    const response = await fetch('/api/auth/cookie', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ role: '' }), // Empty role to clear
+    // Clear server-side session
+    await fetch('/api/auth/session', {
+      method: 'DELETE',
+      credentials: 'include',
     });
-    
-    if (!response.ok) {
-      console.error('Failed to clear cookie via API');
-    }
   } catch (error) {
-    console.error('Error clearing cookie via API:', error);
+    console.error('Error clearing server session:', error);
   }
   
-  // Use client-side navigation
+  // Clear any remaining client-side storage
+  if (typeof window !== 'undefined') {
+    sessionStorage.clear();
+    localStorage.clear();
+  }
+  
+  // Redirect to login
   window.location.href = '/login';
 }; 

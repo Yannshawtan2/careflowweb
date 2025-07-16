@@ -86,28 +86,10 @@ const LoginPage = () => {
     console.log('Manual redirect initiated to:', redirectPath);
     
     try {
-      // Set cookie for middleware authentication
-      const userRole = sessionStorage.getItem('userRole');
-      
-      // Use the API endpoint to set the cookie
-      const response = await fetch('/api/auth/cookie', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ role: userRole }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to set cookie');
-      }
-      
-      console.log('Cookie set with role:', userRole);
-      
-      // Navigate to the dashboard
+      // Simply navigate to the dashboard - middleware will handle authentication
       window.location.href = redirectPath;
     } catch (error) {
-      console.error('Error setting cookie:', error);
+      console.error('Error during redirect:', error);
       // Continue with redirect anyway
       window.location.href = redirectPath;
     }
@@ -132,7 +114,28 @@ const LoginPage = () => {
         throw new Error('Incorrect username or password');
       }
 
-      console.log('Firebase authentication successful, fetching user data...');
+      console.log('Firebase authentication successful, creating session...');
+      const idToken = await userCredential.user.getIdToken();
+      
+      // Create server-side session
+      const sessionResponse = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!sessionResponse.ok) {
+        const errorData = await sessionResponse.text();
+        console.error('Session creation failed:', errorData);
+        throw new Error('Failed to create session');
+      }
+
+      const sessionData = await sessionResponse.json();
+      console.log('Session created successfully:', sessionData);
+
+      // Get user data to determine redirect
       const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
       const userData = userDoc.data();
 
@@ -143,52 +146,13 @@ const LoginPage = () => {
 
       console.log('User data retrieved:', { role: userData.role, email: userCredential.user.email });
 
-      // Generate JWT token
-      console.log('Generating JWT token...');
-      const token = generateToken({
-        userId: userCredential.user.uid,
-        role: userData.role,
-        email: userCredential.user.email || ''
-      });
-
-      // Store token and role in session storage
-      console.log('Storing session data...');
-      sessionStorage.setItem('token', token);
-      sessionStorage.setItem('userRole', userData.role);
-      sessionStorage.setItem('userId', userCredential.user.uid);
-      
-      // Set a cookie with the role using the API
-      try {
-        const cookieResponse = await fetch('/api/auth/cookie', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ role: userData.role }),
-        });
-        
-        if (!cookieResponse.ok) {
-          console.error('Failed to set cookie via API');
-        } else {
-          console.log('Cookie set via API with role:', userData.role);
-        }
-      } catch (error) {
-        console.error('Error setting cookie via API:', error);
-      }
-      
-      // Verify session storage was set
-      const storedToken = sessionStorage.getItem('token');
-      const storedRole = sessionStorage.getItem('userRole');
-      console.log('Session storage verification:', {
-        tokenSet: !!storedToken,
-        roleSet: storedRole === userData.role
-      });
-
       // Get redirect path
       const path = getRedirectPath(userData.role);
       if (!path) {
         throw new Error('Invalid user role or access denied');
       }
+
+      console.log('Redirect path determined:', path);
 
       // Set up for manual redirect
       setRedirectPath(path);
@@ -223,7 +187,7 @@ const LoginPage = () => {
         {loginSuccess ? (
           <div className="text-center py-4">
             <h2 className="text-2xl font-bold text-green-600 mb-4">Authentication Successful!</h2>
-            <p className="mb-6">You have successfully logged in as {sessionStorage.getItem('userRole')}.</p>
+            <p className="mb-6">You have successfully logged in.</p>
             <button
               onClick={handleRedirect}
               className="w-full rounded-md bg-green-600 py-2 px-4 font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"

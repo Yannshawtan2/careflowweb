@@ -1,22 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { adminDb } from '@/lib/firebase-admin'
+import { adminAuth, adminDb } from '@/lib/firebase-admin'
 
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
-    const userRole = cookieStore.get('userRole')?.value
-    const userId = cookieStore.get('userId')?.value
+    const sessionCookie = cookieStore.get('session')?.value
 
-    if (!userId) {
+    if (!sessionCookie) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       )
     }
 
-    // Get user data from your database
-    const userDoc = await adminDb.collection('users').doc(userId).get()
+    // Verify session cookie
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
+    
+    if (!decodedClaims) {
+      return NextResponse.json(
+        { error: 'Invalid session' },
+        { status: 401 }
+      )
+    }
+
+    // Get user data from database
+    const userDoc = await adminDb.collection('users').doc(decodedClaims.uid).get()
 
     if (!userDoc.exists) {
       return NextResponse.json(
@@ -29,9 +38,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       id: userDoc.id,
-      email: userData?.email,
+      email: userData?.email || decodedClaims.email,
       name: userData?.name,
-      role: userRole || userData?.role || 'user', // Use cookie role or fallback to database
+      role: userData?.role || 'user',
       phone: userData?.phone,
       stripeCustomerId: userData?.stripeCustomerId,
     })

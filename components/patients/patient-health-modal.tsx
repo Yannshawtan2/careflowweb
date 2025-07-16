@@ -15,6 +15,7 @@ import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc } f
 import { db } from "@/lib/firebase"
 import type { Patient, FamilyVisibleUpdate, ClinicalNote, Vitals, MoodScale, AppetiteLevel, ActivityParticipation, MedicationCompliance } from "@/lib/types"
 import { toast } from "sonner"
+import { useAuth } from "@/lib/hooks/useAuth"
 
 interface PatientHealthModalProps {
   isOpen: boolean
@@ -24,6 +25,7 @@ interface PatientHealthModalProps {
 }
 
 export function PatientHealthModal({ isOpen, onClose, patient, onUpdate }: PatientHealthModalProps) {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState("family")
@@ -310,8 +312,8 @@ export function PatientHealthModal({ isOpen, onClose, patient, onUpdate }: Patie
         medicationCompliance: familyForm.medicationCompliance,
         generalNotes: familyForm.generalNotes || "",
         timestamp: new Date().toISOString(),
-        nurseId: "current-nurse-id", // TODO: Get from auth
-        nurseName: "Current Nurse" // TODO: Get from auth
+        nurseId: user?.id || "unknown",
+        nurseName: user?.name || user?.email || "Unknown Nurse"
       }
       
       // Clean the family update object to remove any undefined values
@@ -398,8 +400,8 @@ export function PatientHealthModal({ isOpen, onClose, patient, onUpdate }: Patie
           ...customFieldsData
         },
         timestamp: new Date().toISOString(),
-        nurseId: "current-nurse-id", // TODO: Get from auth
-        nurseName: "Current Nurse", // TODO: Get from auth
+        nurseId: user?.id || "unknown",
+        nurseName: user?.name || user?.email || "Unknown Nurse",
         familyVisibleUpdate: todayFamilyUpdate // Include today's family update
       }
       

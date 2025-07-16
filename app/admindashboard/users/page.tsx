@@ -1,15 +1,11 @@
 "use client"
 
-import type { Metadata } from "next"
 import { PlusCircle, Pencil, Trash2 } from "lucide-react"
-import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
-import { AdminSidebar } from "@/components/admin-sidebar"
-import { AdminHeader } from "@/components/AdminHeader"
 import { CreateUserForm } from "@/components/create-user-form"
 
 // export const metadata: Metadata = {
@@ -98,7 +94,6 @@ export default function UsersPage() {
   return (
     <>
     <div className="flex min-h-screen bg-[#FFFDF6]">
-      <AdminSidebar />
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between">
           <div>

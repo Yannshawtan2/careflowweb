@@ -13,29 +13,17 @@ export function middleware(request: NextRequest) {
 
   // Check if the current path is a protected route
   if (path in protectedRoutes) {
-    // Get token from cookies
-    const userRole = request.cookies.get('userRole')?.value
+    // Check for session cookie
+    const sessionCookie = request.cookies.get('session')?.value;
     
-    if (!userRole) {
-      console.log('No user role found in cookies, redirecting to login');
+    if (!sessionCookie) {
+      console.log('No session cookie found, redirecting to login');
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // Check if user's role has access to this route
-    const allowedRoles = protectedRoutes[path as keyof typeof protectedRoutes]
-    if (!allowedRoles.includes(userRole)) {
-      // Redirect to appropriate dashboard based on role
-      switch (userRole) {
-        case 'admin':
-          return NextResponse.redirect(new URL('/admindashboard', request.url))
-        case 'staff':
-          return NextResponse.redirect(new URL('/staffdashboard', request.url))
-        case 'guardian':
-          return NextResponse.redirect(new URL('/guardian-dashboard', request.url))
-        default:
-          return NextResponse.redirect(new URL('/login', request.url))
-      }
-    }
+    // If we have a session cookie, let the request proceed
+    // The actual validation will be done in the layout components
+    return NextResponse.next()
   }
 
   return NextResponse.next()

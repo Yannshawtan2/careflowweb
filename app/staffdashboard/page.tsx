@@ -8,8 +8,10 @@ import { Heart, Activity, AlertTriangle, Users, Calendar, TrendingUp } from "luc
 import Link from 'next/link';
 import type { Patient, HealthRecord } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 const DashboardPage: React.FC = () => {
+    const { user } = useAuth();
     const [patients, setPatients] = useState<Patient[]>([]);
     const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -82,7 +84,7 @@ const DashboardPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-[#A0C878]">Staff Dashboard</h1>
-                    <p className="text-muted-foreground">Welcome back! Here's an overview of your patients and care activities.</p>
+                    <p className="text-muted-foreground">Welcome back, {user?.name || user?.email}! Here&apos;s an overview of your patients and care activities.</p>
                 </div>
                 <Link href="/staffdashboard/patients">
                     <Button className="bg-[#A0C878] hover:bg-[#8AB868] text-white">

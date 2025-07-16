@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { MoreHorizontal, ArrowUpDown, Download, Pause, X, Trash2 } from "lucide-react"
 
 import {
@@ -35,7 +35,7 @@ export function BillingPlansTable() {
   const [subscriptions, setSubscriptions] = useState<BillingSubscription[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  const refreshSubscriptions = async () => {
+  const refreshSubscriptions = useCallback(async () => {
     try {
       setIsLoading(true)
       const data = await billingService.getSubscriptions()
@@ -48,13 +48,13 @@ export function BillingPlansTable() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     refreshSubscriptions()
-  }, [])
+  }, [refreshSubscriptions])
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case "active":
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>
@@ -65,9 +65,9 @@ export function BillingPlansTable() {
       default:
         return <Badge variant="outline">{status}</Badge>
     }
-  }
+  }, [])
 
-  const handleStatusUpdate = async (subscriptionId: string, newStatus: "active" | "paused" | "cancelled") => {
+  const handleStatusUpdate = useCallback(async (subscriptionId: string, newStatus: "active" | "paused" | "cancelled") => {
     try {
       await billingService.updateSubscription({
         subscriptionId,
@@ -85,14 +85,12 @@ export function BillingPlansTable() {
         description: error.message || "Failed to update subscription status",
       })
     }
-  }
+  }, [refreshSubscriptions])
 
-  const handleBulkStatusUpdate = async (status: "paused" | "cancelled") => {
+  const handleBulkStatusUpdate = useCallback(async (status: "paused" | "cancelled", selectedRows: any[]) => {
     try {
-      const selectedSubscriptions = table.getFilteredSelectedRowModel().rows
-      
       await Promise.all(
-        selectedSubscriptions.map((row) =>
+        selectedRows.map((row) =>
           billingService.updateSubscription({
             subscriptionId: row.original.id,
             status,
@@ -111,18 +109,18 @@ export function BillingPlansTable() {
         description: error.message || "Failed to update subscription statuses",
       })
     }
-  }
+  }, [refreshSubscriptions])
 
-  const formatDate = (date: string | Date) => {
+  const formatDate = useCallback((date: string | Date) => {
     const d = new Date(date);
     return d.toLocaleDateString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
     });
-  }
+  }, [])
 
-  const handleDeleteSubscription = async (subscriptionId: string) => {
+  const handleDeleteSubscription = useCallback(async (subscriptionId: string) => {
     if (!confirm("Are you sure you want to cancel this subscription? It will remain active until the end of the current billing period.")) {
       return
     }
@@ -140,29 +138,27 @@ export function BillingPlansTable() {
         description: error.message || "Failed to cancel subscription",
       })
     }
-  }
+  }, [refreshSubscriptions])
 
-  const handleBulkDelete = async () => {
-    const selectedSubscriptions = table.getFilteredSelectedRowModel().rows
-    
-    if (selectedSubscriptions.length === 0) {
+  const handleBulkDelete = useCallback(async (selectedRows: any[]) => {
+    if (selectedRows.length === 0) {
       toast.error("No subscriptions selected")
       return
     }
 
-    if (!confirm(`Are you sure you want to cancel ${selectedSubscriptions.length} subscription(s)? They will remain active until the end of their current billing periods.`)) {
+    if (!confirm(`Are you sure you want to cancel ${selectedRows.length} subscription(s)? They will remain active until the end of their current billing periods.`)) {
       return
     }
 
     try {
       await Promise.all(
-        selectedSubscriptions.map((row) =>
+        selectedRows.map((row) =>
           billingService.deleteSubscription(row.original.id)
         )
       )
 
       toast.success("Subscriptions cancelled", {
-        description: `${selectedSubscriptions.length} subscription(s) have been scheduled for cancellation at the end of their current billing periods`,
+        description: `${selectedRows.length} subscription(s) have been scheduled for cancellation at the end of their current billing periods`,
       })
 
       refreshSubscriptions()
@@ -171,9 +167,9 @@ export function BillingPlansTable() {
         description: error.message || "Failed to cancel subscriptions",
       })
     }
-  }
+  }, [refreshSubscriptions])
 
-  const columns: ColumnDef<BillingSubscription>[] = [
+  const columns: ColumnDef<BillingSubscription>[] = useMemo(() => [
     {
       id: "select",
       header: ({ table }) => (
@@ -309,12 +305,14 @@ export function BillingPlansTable() {
         )
       },
     },
-  ]
+  ], [refreshSubscriptions, handleDeleteSubscription, handleStatusUpdate, formatDate, getStatusBadge])
 
-  const filteredData =
-    statusFilter === "all"
-      ? subscriptions
-      : subscriptions.filter((sub) => sub.status === statusFilter)
+  const filteredData = useMemo(() => {
+    if (statusFilter === "all") {
+      return subscriptions
+    }
+    return subscriptions.filter((sub) => sub.status === statusFilter)
+  }, [subscriptions, statusFilter])
 
   const table = useReactTable({
     data: filteredData,
@@ -365,7 +363,7 @@ export function BillingPlansTable() {
                 variant="outline" 
                 size="sm" 
                 className="border-[#DDEB9D] hover:bg-[#DDEB9D] hover:text-black"
-                onClick={() => handleBulkStatusUpdate("paused")}
+                onClick={() => handleBulkStatusUpdate("paused", selectedRows)}
               >
                 <Pause className="mr-2 h-4 w-4" />
                 Pause Selected ({selectedRows.length})
@@ -374,7 +372,7 @@ export function BillingPlansTable() {
                 variant="outline" 
                 size="sm" 
                 className="border-red-200 text-red-600 hover:bg-red-50"
-                onClick={() => handleBulkStatusUpdate("cancelled")}
+                onClick={() => handleBulkStatusUpdate("cancelled", selectedRows)}
               >
                 <X className="mr-2 h-4 w-4" />
                 Cancel Selected ({selectedRows.length})
@@ -383,7 +381,7 @@ export function BillingPlansTable() {
                 variant="outline" 
                 size="sm" 
                 className="border-red-200 text-red-600 hover:bg-red-50"
-                onClick={handleBulkDelete}
+                onClick={() => handleBulkDelete(selectedRows)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Cancel Selected ({selectedRows.length})

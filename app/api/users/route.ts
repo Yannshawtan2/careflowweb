@@ -127,7 +127,9 @@ export async function DELETE(req: NextRequest) {
     // First, try to find the user document to get the actual Firebase Auth UID
     let firebaseUid = uid;
     let documentId = uid;
-    
+    let userRole = null;
+    let userUid = null;
+
     // If the uid looks like an email, search by email
     if (uid.includes('@')) {
       const usersSnapshot = await adminDb.collection('users').where('email', '==', uid).get();
@@ -135,6 +137,8 @@ export async function DELETE(req: NextRequest) {
         const userDoc = usersSnapshot.docs[0];
         documentId = userDoc.id;
         firebaseUid = userDoc.data().uid || uid;
+        userRole = userDoc.data().role;
+        userUid = userDoc.data().uid || documentId;
       }
     } else {
       // Try to get the document to see if it has a uid field
@@ -143,9 +147,30 @@ export async function DELETE(req: NextRequest) {
         if (userDoc.exists) {
           const userData = userDoc.data();
           firebaseUid = userData?.uid || uid;
+          userRole = userData?.role;
+          userUid = userData?.uid || uid;
         }
       } catch (error) {
         console.log('Document not found by ID, trying as Firebase UID');
+      }
+    }
+
+    // If the user is a guardian, update their patient's status to discharged
+    if (userRole === 'guardian' && userUid) {
+      try {
+        const patientsSnapshot = await adminDb.collection('patients').where('guardianId', '==', userUid).get();
+        if (!patientsSnapshot.empty) {
+          for (const patientDoc of patientsSnapshot.docs) {
+            await adminDb.collection('patients').doc(patientDoc.id).update({
+              status: 'discharged',
+              updatedAt: new Date().toISOString(),
+            });
+            console.log(`Patient ${patientDoc.id} status set to discharged due to guardian deletion.`);
+          }
+        }
+      } catch (err) {
+        console.error('Error updating patient status for deleted guardian:', err);
+        // Continue with deletion even if this fails
       }
     }
     
@@ -193,8 +218,6 @@ export async function PUT(req: NextRequest) {
       password, 
       role, 
       startDate, 
-      permissions,
-      // Patient-specific fields
       dateOfBirth,
       roomNumber,
       guardianName,
@@ -254,7 +277,6 @@ export async function PUT(req: NextRequest) {
       phone,
       role,
       startDate,
-      permissions: permissions || [],
       updatedAt: new Date().toISOString(),
       };
       

@@ -50,7 +50,7 @@ export default function ManageDonationCampaignsPage() {
       title: campaign.title,
       description: campaign.description,
       goal: String(campaign.goalAmount),
-      imageUrl: campaign.imageUrl || ""
+      imageUrl: campaign.imageUrl || "" // Ensure we preserve the current image URL
     })
     setIsEditModalOpen(true)
   }
@@ -58,6 +58,7 @@ export default function ManageDonationCampaignsPage() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editCampaign) return
+    
     setIsEditLoading(true)
     try {
       const response = await fetch(`/api/donations/campaign?id=${editCampaign.id}`, {
@@ -67,7 +68,7 @@ export default function ManageDonationCampaignsPage() {
           title: editForm.title,
           description: editForm.description,
           goalAmount: Number(editForm.goal),
-          imageUrl: editForm.imageUrl,
+          imageUrl: editForm.imageUrl || "", // Empty string if no image
         }),
       })
       if (!response.ok) throw new Error("Failed to update campaign")
@@ -90,6 +91,87 @@ export default function ManageDonationCampaignsPage() {
       fetchCampaigns()
     } catch (error: any) {
       toast.error("Error deleting campaign", { description: error.message })
+    }
+  }
+
+  const handleEditImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Invalid file type", { description: "Please select a valid image file (JPEG, PNG, GIF, WebP)" })
+      return
+    }
+    
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      toast.error("File too large", { description: "Please select an image smaller than 5MB" })
+      return
+    }
+    
+    setIsUploading(true)
+    
+    try {
+      const oldImageUrl = editForm.imageUrl
+      
+      // Upload the new image first
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET)
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body: formData,
+      })
+      
+      if (!res.ok) {
+        const errorText = await res.text()
+        throw new Error(`Cloudinary upload failed: ${res.status} ${res.statusText}`)
+      }
+      
+      const data = await res.json()
+      if (data.secure_url) {
+        // Update the form with the new image URL
+        setEditForm(f => ({ ...f, imageUrl: data.secure_url }))
+        
+        // Try to delete the old image from Cloudinary if it exists
+        if (oldImageUrl) {
+          try {
+            // Extract public_id from Cloudinary URL
+            // URLs can be like: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/public_id.jpg
+            const urlParts = oldImageUrl.split('/')
+            const uploadIndex = urlParts.findIndex(part => part === 'upload')
+            if (uploadIndex !== -1 && uploadIndex + 2 < urlParts.length) {
+              let publicIdWithExt = urlParts.slice(uploadIndex + 2).join('/')
+              // Remove file extension
+              const publicId = publicIdWithExt.split('.')[0]
+              
+              // Delete the old image
+              const deleteResponse = await fetch('/api/cloudinary/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ publicId })
+              })
+              
+              if (!deleteResponse.ok) {
+                console.warn('Failed to delete old image from Cloudinary')
+              }
+            }
+          } catch (deleteError) {
+            console.warn('Failed to delete old image:', deleteError)
+            // Don't fail the entire process if deletion fails
+          }
+        }
+        
+        toast.success("Image uploaded successfully!")
+      } else {
+        throw new Error("Cloudinary upload failed - no secure_url received")
+      }
+    } catch (err: any) {
+      toast.error("Image upload failed", { description: err.message })
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -279,8 +361,32 @@ export default function ManageDonationCampaignsPage() {
                 <Input id="edit-goal" type="number" min="1" value={editForm.goal} onChange={e => setEditForm(f => ({ ...f, goal: e.target.value }))} required className="border-[#DDEB9D] focus:ring-[#A0C878] bg-white" />
               </div>
               <div>
-                <Label htmlFor="edit-imageUrl">Image URL</Label>
-                <Input id="edit-imageUrl" value={editForm.imageUrl} onChange={e => setEditForm(f => ({ ...f, imageUrl: e.target.value }))} className="border-[#DDEB9D] focus:ring-[#A0C878] bg-white" />
+                <Label htmlFor="edit-image">Campaign Image</Label>
+                <Input id="edit-image" type="file" accept="image/*" onChange={handleEditImageChange} className="border-[#DDEB9D] focus:ring-[#A0C878] bg-white" />
+                {isUploading && (
+                  <div className="text-xs text-blue-600 mt-1 flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2"></div>
+                    Uploading image...
+                  </div>
+                )}
+                {editForm.imageUrl && (
+                  <div className="mt-2">
+                    <img src={editForm.imageUrl} alt="Preview" className="rounded-md w-full h-40 object-cover border border-[#DDEB9D]" />
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-xs text-green-600">✓ Current image</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditForm(f => ({ ...f, imageUrl: "" }))}
+                        className="text-xs text-red-600 border-red-200 hover:bg-red-50"
+                      >
+                        Remove Image
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Leave blank to keep current image</p>
               </div>
               <Button type="submit" className="w-full bg-[#A0C878] hover:bg-[#8AB868] text-white" disabled={isEditLoading}>
                 {isEditLoading ? "Saving..." : "Save Changes"}

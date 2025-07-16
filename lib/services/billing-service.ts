@@ -18,6 +18,10 @@ export interface EditSubscriptionData {
   amount?: number;
   frequency?: "monthly" | "quarterly" | "yearly";
   description?: string;
+  lineItems?: Array<{
+    item: string;
+    price: number;
+  }>;
 }
 
 export interface CustomerData {
@@ -212,6 +216,34 @@ export const billingService = {
     }
 
     return response.json();
+  },
+
+  // Get detailed subscription information for editing
+  async getSubscriptionDetails(subscriptionId: string) {
+    try {
+      const response = await fetch(`/api/billing/subscription-details?subscriptionId=${subscriptionId}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        
+        // Try to parse as JSON, fall back to text
+        let error;
+        try {
+          error = JSON.parse(errorText);
+        } catch {
+          error = { message: errorText };
+        }
+        
+        throw new Error(error.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error: any) {
+      console.error('Error in getSubscriptionDetails:', error);
+      throw error;
+    }
   },
 
   // Test Stripe connectivity

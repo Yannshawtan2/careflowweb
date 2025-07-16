@@ -559,7 +559,10 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
+                    <div className="flex items-center">
+                      <span className="px-2 py-2 bg-gray-100 border border-r-0 border-[#DDEB9D] rounded-l-md text-gray-500 select-none">+60</span>
                       <Input placeholder="(123) 456-7890" {...field} className="bg-white border-[#DDEB9D] focus:ring-[#A0C878]" />
+                    </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

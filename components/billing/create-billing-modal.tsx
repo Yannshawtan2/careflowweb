@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
-import { CalendarIcon, Loader2 } from "lucide-react"
+import { CalendarIcon, Loader2, Plus, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { billingService } from "@/lib/services/billing-service"
 import { getStripe } from "@/lib/stripe-client"
@@ -40,6 +40,10 @@ const formSchema = z.object({
     required_error: "Please select a start date",
   }),
   activateImmediately: z.boolean(),
+  lineItems: z.array(z.object({
+    item: z.string().min(1, "Item name is required"),
+    price: z.coerce.number().min(0.01, "Price must be greater than 0"),
+  })).optional(),
 })
 
 interface CreateBillingModalProps {
@@ -62,10 +66,24 @@ export function CreateBillingModal({ isOpen, onClose }: CreateBillingModalProps)
       description: "",
       startDate: new Date(),
       activateImmediately: true,
+      lineItems: [],
     },
   })
 
   const watchedValues = form.watch()
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "lineItems",
+  })
+
+  const addLineItem = () => {
+    append({ item: "", price: 0 })
+  }
+
+  const removeLineItem = (index: number) => {
+    remove(index)
+  }
 
   useEffect(() => {
     const fetchGuardians = async () => {
@@ -163,6 +181,7 @@ export function CreateBillingModal({ isOpen, onClose }: CreateBillingModalProps)
           frequency: values.frequency,
           description: values.description,
           startDate: values.startDate.toISOString(),
+          lineItems: values.lineItems || [],
         }),
       })
 
@@ -283,8 +302,6 @@ export function CreateBillingModal({ isOpen, onClose }: CreateBillingModalProps)
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="quarterly">Quarterly</SelectItem>
-                        <SelectItem value="yearly">Yearly</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -348,6 +365,96 @@ export function CreateBillingModal({ isOpen, onClose }: CreateBillingModalProps)
               )}
             />
 
+            {/* Line Items Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <FormLabel className="text-base font-medium">Additional Line Items</FormLabel>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addLineItem}
+                  className="border-[#DDEB9D] bg-white hover:bg-[#DDEB9D] hover:text-black"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+              
+              {fields.length > 0 && (
+                <div className="space-y-3">
+                  {fields.map((field, index) => (
+                    <div key={field.id} className="flex gap-3 items-end">
+                      <div className="flex-1">
+                        <FormField
+                          control={form.control}
+                          name={`lineItems.${index}.item`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm">Item</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="e.g., Medication Fee"
+                                  className="bg-white border-[#DDEB9D] focus:ring-[#A0C878]"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="w-32">
+                        <FormField
+                          control={form.control}
+                          name={`lineItems.${index}.price`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm">Price</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    className="pl-8 bg-white border-[#DDEB9D] focus:ring-[#A0C878]"
+                                    {...field}
+                                    onChange={(e) => {
+                                      const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                                      field.onChange(value);
+                                    }}
+                                    value={field.value || ''}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeLineItem(index)}
+                        className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 mb-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {fields.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">No additional line items added</p>
+                  <p className="text-xs">Click "Add Item" to include extra charges on the invoice</p>
+                </div>
+              )}
+            </div>
+
             {/* Preview Section */}
             {watchedValues.amount > 0 && watchedValues.startDate && (
               <Card className="bg-[#DDEB9D]/30 border-[#DDEB9D]">
@@ -367,11 +474,37 @@ export function CreateBillingModal({ isOpen, onClose }: CreateBillingModalProps)
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Amount per {watchedValues.frequency.replace("ly", "")}:</span>
+                    <span>Base amount per {watchedValues.frequency.replace("ly", "")}:</span>
                     <span className="font-medium">
                       ${Number(watchedValues.amount).toFixed(2)}
                     </span>
                   </div>
+                  
+                  {/* Line Items Preview */}
+                  {watchedValues.lineItems && watchedValues.lineItems.length > 0 && (
+                    <>
+                      <div className="border-t pt-2 mt-2">
+                        <div className="text-sm font-medium mb-1">Additional Items:</div>
+                        {watchedValues.lineItems.map((item, index) => (
+                          item.item && item.price > 0 && (
+                            <div key={index} className="flex justify-between text-sm text-muted-foreground">
+                              <span>{item.item}</span>
+                              <span>${Number(item.price).toFixed(2)}</span>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                      <div className="flex justify-between text-sm font-medium border-t pt-2">
+                        <span>Total per {watchedValues.frequency.replace("ly", "")}:</span>
+                        <span>
+                          ${(
+                            Number(watchedValues.amount) + 
+                            (watchedValues.lineItems?.reduce((sum, item) => sum + (Number(item.price) || 0), 0) || 0)
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}

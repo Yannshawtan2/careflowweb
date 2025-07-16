@@ -7,7 +7,7 @@ import type Stripe from 'stripe'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { guardianId, amount, frequency, description, startDate } = body
+    const { guardianId, amount, frequency, description, startDate, lineItems } = body
 
     // Validate required fields
     if (!guardianId || !amount || !frequency || !description || !startDate) {
@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
       yearly: 'year'
     }
 
-    // Create a price object for the subscription
-    const price = await stripe.prices.create({
+    // Create a price object for the main subscription
+    const mainPrice = await stripe.prices.create({
       unit_amount: Math.round(amount * 100), // Convert to cents
       currency: 'myr',
       recurring: {
@@ -70,10 +70,33 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Create subscription items array starting with the main item
+    const subscriptionItems = [{ price: mainPrice.id }]
+
+    // Add line items if they exist
+    if (lineItems && Array.isArray(lineItems) && lineItems.length > 0) {
+      for (const lineItem of lineItems) {
+        if (lineItem.item && lineItem.price > 0) {
+          const lineItemPrice = await stripe.prices.create({
+            unit_amount: Math.round(lineItem.price * 100), // Convert to cents
+            currency: 'myr',
+            recurring: {
+              interval: intervalMap[frequency] as 'month' | 'year',
+              interval_count: frequency === 'quarterly' ? 3 : 1,
+            },
+            product_data: {
+              name: lineItem.item,
+            },
+          })
+          subscriptionItems.push({ price: lineItemPrice.id })
+        }
+      }
+    }
+
     // Create a subscription using the existing or newly created customer
     const subscription = await stripe.subscriptions.create({
       customer: stripeCustomerId,
-      items: [{ price: price.id }],
+      items: subscriptionItems,
       payment_behavior: 'default_incomplete',
       payment_settings: { save_default_payment_method: 'on_subscription' },
       expand: ['latest_invoice.payment_intent'],

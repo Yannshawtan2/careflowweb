@@ -21,7 +21,6 @@ export async function GET() {
   try {
     const snapshot = await adminDb.collection('inventory').get()
     const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    console.log(items)
     return NextResponse.json({ success: true, items })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })

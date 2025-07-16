@@ -35,8 +35,18 @@ export async function GET(request: NextRequest) {
       try {
         const customer = sub.customer as any
         const guardian = guardians.get(customer.id)
-        const price = sub.items.data[0]?.price as any
         const subscription = sub as any
+
+        // Calculate total amount from all subscription items
+        const totalAmount = sub.items.data.reduce((sum, item) => {
+          const price = item.price as any
+          return sum + ((price?.unit_amount || 0) / 100)
+        }, 0)
+
+        // Get description from the first item (main subscription)
+        const mainPrice = sub.items.data[0]?.price as any
+        const frequency = mainPrice?.recurring?.interval || 'monthly'
+        const description = mainPrice?.product_data?.name || 'Subscription'
 
         // Safely handle dates with fallbacks
         const nextPaymentDate = subscription.current_period_end 
@@ -51,11 +61,11 @@ export async function GET(request: NextRequest) {
           id: sub.id,
           guardianId: guardian?.id || customer.id,
           guardianName: guardian?.name || customer.name || customer.email,
-          amount: (price?.unit_amount || 0) / 100, // Convert from cents
-          frequency: price?.recurring?.interval || 'monthly',
+          amount: totalAmount, // Now shows total of all items
+          frequency: frequency,
           status: sub.status,
           nextPaymentDate,
-          description: price?.product_data?.name || 'Subscription',
+          description,
           createdAt,
           stripeCustomerId: customer.id,
           cancelAt: subscription.cancel_at 

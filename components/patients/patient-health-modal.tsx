@@ -60,9 +60,7 @@ export function PatientHealthModal({ isOpen, onClose, patient, onUpdate }: Patie
       bloodPressure: "",
       temperature: "",
       pulse: "",
-      oxygenSaturation: "",
-      weight: "",
-      height: ""
+      oxygenSaturation: ""
     },
     mood: 3 as 1 | 2 | 3 | 4 | 5,
     appetite: "fair" as "poor" | "fair" | "good",

@@ -11,16 +11,50 @@ import type { DonationCampaign } from "@/lib/types"
 export default function DonationSuccessPage() {
   const searchParams = useSearchParams()
   const campaignId = searchParams.get("campaign")
+  const sessionId = searchParams.get("session_id")
   const [campaign, setCampaign] = useState<DonationCampaign | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [paymentVerified, setPaymentVerified] = useState(false)
+  const [verificationError, setVerificationError] = useState<string | null>(null)
 
   useEffect(() => {
     if (campaignId) {
       fetchCampaign()
-    } else {
+    }
+    
+    if (sessionId) {
+      verifyPayment()
+    }
+    
+    if (!campaignId && !sessionId) {
       setIsLoading(false)
     }
-  }, [campaignId])
+  }, [campaignId, sessionId])
+
+  const verifyPayment = async () => {
+    try {
+      console.log('🔍 Verifying payment for session:', sessionId)
+      
+      const response = await fetch('/api/donations/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      })
+
+      const data = await response.json()
+      
+      if (response.ok) {
+        console.log('✅ Payment verified successfully')
+        setPaymentVerified(true)
+      } else {
+        console.error('❌ Payment verification failed:', data.error)
+        setVerificationError(data.error)
+      }
+    } catch (error) {
+      console.error('❌ Error verifying payment:', error)
+      setVerificationError('Failed to verify payment')
+    }
+  }
 
   const fetchCampaign = async () => {
     try {
@@ -53,14 +87,33 @@ export default function DonationSuccessPage() {
         <Card className="bg-[#FAF6E9] border-[#DDEB9D] text-center">
           <CardHeader>
             <div className="flex justify-center mb-4">
-              <CheckCircle className="h-16 w-16 text-green-500" />
+              {paymentVerified ? (
+                <CheckCircle className="h-16 w-16 text-green-500" />
+              ) : verificationError ? (
+                <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
+                  <span className="text-red-500 text-2xl">!</span>
+                </div>
+              ) : (
+                <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              )}
             </div>
             <CardTitle className="text-3xl text-[#A0C878] mb-2">
-              Thank You for Your Donation!
+              {paymentVerified ? "Thank You for Your Donation!" : 
+               verificationError ? "Payment Verification Issue" :
+               "Processing Your Donation..."}
             </CardTitle>
             <p className="text-gray-600">
-              Your generous contribution will make a real difference in our community.
+              {paymentVerified ? "Your generous contribution will make a real difference in our community." :
+               verificationError ? "There was an issue verifying your payment. Please contact support." :
+               "We're confirming your payment and updating the campaign totals..."}
             </p>
+            {verificationError && (
+              <p className="text-red-600 text-sm mt-2">
+                Error: {verificationError}
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-6">
             {campaign && (

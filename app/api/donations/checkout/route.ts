@@ -91,11 +91,21 @@ export async function POST(request: NextRequest) {
       sessionId: session.id,
     }
 
-    await adminDb.collection('donations').add(donationData)
+    console.log('💾 Creating donation record:', {
+      campaignId,
+      amount,
+      donorEmail,
+      sessionId: session.id,
+      paymentIntentId: session.payment_intent
+    })
+
+    const donationRef = await adminDb.collection('donations').add(donationData)
+    console.log('✅ Donation record created:', donationRef.id)
 
     return NextResponse.json({
       sessionId: session.id,
       url: session.url,
+      donationId: donationRef.id,
     })
   } catch (error: any) {
     console.error('Error creating checkout session:', error)

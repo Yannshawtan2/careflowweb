@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { logout } from "@/lib/auth";
-import { Building, DollarSign, Home, LogOut, Package, Settings, Users } from "lucide-react"
+import { Building, DollarSign, Home, LogOut, Package, Users } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 

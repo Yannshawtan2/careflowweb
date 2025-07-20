@@ -13,20 +13,37 @@ export default function DonateLandingPage() {
   const [campaigns, setCampaigns] = useState<DonationCampaign[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  const fetchCampaigns = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch("/api/donations/campaigns")
+      const data = await response.json()
+      setCampaigns(data.campaigns || [])
+    } catch (error) {
+      toast.error("Failed to load donation campaigns")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
-    const fetchCampaigns = async () => {
-      try {
-        setIsLoading(true)
-        const response = await fetch("/api/donations/campaigns")
-        const data = await response.json()
-        setCampaigns(data.campaigns || [])
-      } catch (error) {
-        toast.error("Failed to load donation campaigns")
-      } finally {
-        setIsLoading(false)
+    fetchCampaigns()
+  }, [])
+
+  // Refresh campaigns when user returns to page (e.g., after donation)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page is visible, refresh campaigns
+        fetchCampaigns()
       }
     }
-    fetchCampaigns()
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [])
 
   return (

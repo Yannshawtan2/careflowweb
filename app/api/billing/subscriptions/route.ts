@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Transform Stripe data to match our interface
-    const transformedSubscriptions = subscriptions.data.map(sub => {
+    // Transform Stripe data to match our interface - with proper async handling
+    const transformedSubscriptions = await Promise.all(subscriptions.data.map(async (sub) => {
       try {
         const customer = sub.customer as any
         const guardian = guardians.get(customer.id)
@@ -48,10 +48,45 @@ export async function GET(request: NextRequest) {
         const frequency = mainPrice?.recurring?.interval || 'monthly'
         const description = mainPrice?.product_data?.name || 'Subscription'
 
-        // Safely handle dates with fallbacks
-        const nextPaymentDate = subscription.current_period_end 
-          ? new Date(subscription.current_period_end * 1000).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0]
+        // Calculate next payment date more accurately based on subscription status
+        let nextPaymentDate: string
+        
+        if (subscription.cancel_at_period_end && subscription.current_period_end) {
+          // Subscription is scheduled to cancel at period end - show when it ends
+          const endDate = new Date(subscription.current_period_end * 1000).toISOString().split('T')[0]
+          nextPaymentDate = `Ends ${endDate}`
+        } else if (subscription.cancel_at_period_end) {
+          // Subscription is scheduled to cancel but no end date available
+          nextPaymentDate = 'Ending Soon'
+        } else if (sub.status === 'active') {
+          // For active subscriptions, get the next payment date from subscription items
+          // Some subscriptions don't have current_period_end at the top level
+          if (subscription.current_period_end) {
+            const nextPaymentDateTime = new Date(subscription.current_period_end * 1000)
+            nextPaymentDate = nextPaymentDateTime.toISOString().split('T')[0]
+          } else if (subscription.items?.data?.[0]?.current_period_end) {
+            // Fallback to first subscription item's period end
+            const nextPaymentDateTime = new Date(subscription.items.data[0].current_period_end * 1000)
+            nextPaymentDate = nextPaymentDateTime.toISOString().split('T')[0]
+          } else {
+            // Final fallback - use billing cycle anchor + 1 month
+            const billingAnchor = subscription.billing_cycle_anchor || subscription.created
+            const nextPaymentDateTime = new Date(billingAnchor * 1000)
+            nextPaymentDateTime.setMonth(nextPaymentDateTime.getMonth() + 1)
+            nextPaymentDate = nextPaymentDateTime.toISOString().split('T')[0]
+          }
+        } else if (sub.status === 'canceled') {
+          // For canceled subscriptions, no next payment
+          nextPaymentDate = 'Canceled'
+        } else if (sub.status === 'paused' || sub.status === 'incomplete') {
+          // For paused or incomplete subscriptions, no next payment
+          nextPaymentDate = 'N/A'
+        } else {
+          // Fallback for other statuses
+          nextPaymentDate = subscription.current_period_end 
+            ? new Date(subscription.current_period_end * 1000).toISOString().split('T')[0]
+            : 'N/A'
+        }
         
         const createdAt = subscription.created 
           ? new Date(subscription.created * 1000).toISOString().split('T')[0]
@@ -89,7 +124,7 @@ export async function GET(request: NextRequest) {
           cancelAt: undefined,
         }
       }
-    })
+    }))
 
     return NextResponse.json(transformedSubscriptions)
   } catch (error: any) {

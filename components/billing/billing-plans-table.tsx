@@ -257,8 +257,37 @@ export function BillingPlansTable() {
         )
       },
       cell: ({ row }) => {
-        const date = row.getValue("nextPaymentDate") as string;
-        return <div>{formatDate(date)}</div>
+        const nextPaymentDate = row.getValue("nextPaymentDate") as string
+        const status = row.getValue("status") as string
+        
+        if (status === 'cancelled' || status === 'cancel_at_period_end') {
+          return <span className="text-muted-foreground">N/A</span>
+        }
+        
+        // Check if it's a valid date string (YYYY-MM-DD format)
+        if (nextPaymentDate && /^\d{4}-\d{2}-\d{2}$/.test(nextPaymentDate)) {
+          return <div className="font-medium">{formatDate(nextPaymentDate)}</div>
+        }
+        
+        // Handle special status messages
+        if (nextPaymentDate?.startsWith("Ends ")) {
+          const endDate = nextPaymentDate.replace("Ends ", "")
+          if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+            return <div className="text-orange-600 font-medium">Ends {formatDate(endDate)}</div>
+          }
+          return <div className="text-orange-600 font-medium">{nextPaymentDate}</div>
+        }
+        
+        // Handle other status messages (Ending Soon, Canceled, N/A)
+        const statusColors = {
+          "Ending Soon": "text-orange-600", 
+          "Canceled": "text-red-600",
+          "N/A": "text-muted-foreground"
+        }
+        
+        const colorClass = statusColors[nextPaymentDate as keyof typeof statusColors] || "text-muted-foreground"
+        
+        return <div className={`font-medium ${colorClass}`}>{nextPaymentDate || "N/A"}</div>
       },
     },
     {
@@ -281,26 +310,6 @@ export function BillingPlansTable() {
               <Trash2 className="h-4 w-4" />
               <span className="sr-only">Cancel subscription</span>
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>View Details</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleStatusUpdate(subscription.id, "paused")}>
-                  Pause Subscription
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="text-red-600"
-                  onClick={() => handleStatusUpdate(subscription.id, "cancelled")}
-                >
-                  Cancel Subscription
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         )
       },
@@ -388,10 +397,6 @@ export function BillingPlansTable() {
               </Button>
             </>
           )}
-          <Button variant="outline" size="sm" className="border-[#DDEB9D] hover:bg-[#DDEB9D] hover:text-black">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
         </div>
       </div>
       <div className="rounded-md border border-[#DDEB9D] bg-[#FAF6E9]">

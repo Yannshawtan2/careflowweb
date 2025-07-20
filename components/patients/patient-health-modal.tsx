@@ -882,7 +882,7 @@ export function PatientHealthModal({ isOpen, onClose, patient, onUpdate }: Patie
                     Custom Fields
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Add additional fields specific to this patient's health needs
+                    Add additional fields specific to this resident's health needs
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -86,10 +86,10 @@ const DashboardPage: React.FC = () => {
                     <h1 className="text-3xl font-bold text-[#A0C878]">Staff Dashboard</h1>
                     <p className="text-muted-foreground">Welcome back, {user?.name || user?.email}! Here&apos;s an overview of your patients and care activities.</p>
                 </div>
-                <Link href="/staffdashboard/patients">
+                <Link href="/staffdashboard/residents">
                     <Button className="bg-[#A0C878] hover:bg-[#8AB868] text-white">
                         <Heart className="mr-2 h-4 w-4" />
-                        Manage Patients
+                        Manage Residents
                     </Button>
                 </Link>
             </div>
@@ -98,7 +98,7 @@ const DashboardPage: React.FC = () => {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card className="bg-[#FAF6E9] border-[#DDEB9D]">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total residents</CardTitle>
                         <Heart className="h-4 w-4 text-[#A0C878]" />
                     </CardHeader>
                     <CardContent>
@@ -137,17 +137,17 @@ const DashboardPage: React.FC = () => {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Heart className="h-5 w-5" />
-                            Patient Management
+                            Residents Management
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                            Access comprehensive patient health data, update vitals, and manage care plans.
+                            Access comprehensive resident health data, update vitals, and manage care plans.
                         </p>
                         <div className="flex gap-2">
-                            <Link href="/staffdashboard/patients" className="flex-1">
+                            <Link href="/staffdashboard/residents" className="flex-1">
                                 <Button className="w-full bg-[#A0C878] hover:bg-[#8AB868] text-white">
-                                    View Patients
+                                    View Residents
                                 </Button>
                             </Link>
                         </div>
@@ -192,7 +192,7 @@ const DashboardPage: React.FC = () => {
                                 return (
                                     <div key={record.id} className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
                                         <div>
-                                            <p className="font-medium">Patient Health Update</p>
+                                            <p className="font-medium">Resident Health Update</p>
                                             <p className="text-sm text-muted-foreground">
                                                 Last updated: {lastUpdate.toLocaleDateString()}
                                             </p>
@@ -208,7 +208,7 @@ const DashboardPage: React.FC = () => {
                         <div className="text-center py-8">
                             <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-muted-foreground">No recent activity</p>
-                            <p className="text-sm text-muted-foreground">Start by adding patients and updating their health records</p>
+                            <p className="text-sm text-muted-foreground">Start by adding residents and updating their health records</p>
                     </div>
                     )}
                 </CardContent>

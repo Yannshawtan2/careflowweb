@@ -168,7 +168,7 @@ export default function PatientsPage() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#A0C878] mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading patients...</p>
+            <p className="text-muted-foreground">Loading residents...</p>
           </div>
         </div>
       </div>
@@ -180,8 +180,8 @@ export default function PatientsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[#A0C878]">Patient Management</h1>
-          <p className="text-muted-foreground">Manage and monitor patient health data</p>
+          <h1 className="text-3xl font-bold text-[#A0C878]">Resident Management</h1>
+          <p className="text-muted-foreground">Manage and monitor resident health data</p>
         </div>
       </div>
 
@@ -189,12 +189,12 @@ export default function PatientsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-[#FAF6E9] border-[#DDEB9D]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Residents</CardTitle>
             <Heart className="h-4 w-4 text-[#A0C878]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{patients.filter(p => p.status === "active").length}</div>
-            <p className="text-xs text-muted-foreground">Active patients</p>
+            <p className="text-xs text-muted-foreground">Active Residents</p>
           </CardContent>
         </Card>
         <Card className="bg-[#FAF6E9] border-[#DDEB9D]">
@@ -231,7 +231,7 @@ export default function PatientsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Search patients by name, room, or guardian..."
+                  placeholder="Search residentss by name, room, or guardian..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 bg-white border-[#DDEB9D] focus:ring-[#A0C878]"
@@ -284,7 +284,7 @@ export default function PatientsPage() {
       {filteredPatients.length === 0 && (
         <div className="text-center py-12">
           <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-muted-foreground mb-2">No patients found</h3>
+          <h3 className="text-lg font-semibold text-muted-foreground mb-2">No residents found</h3>
           <p className="text-muted-foreground">Try adjusting your search or filters</p>
         </div>
       )}

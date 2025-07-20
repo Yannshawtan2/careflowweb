@@ -18,8 +18,8 @@ export function StaffSidebar() {
           <NavItem href="/staffdashboard" icon={Home} >
             Dashboard
           </NavItem>
-          <NavItem href="/staffdashboard/patients" icon={Heart}>
-            Patients
+          <NavItem href="/staffdashboard/residents" icon={Heart}>
+            Residents
           </NavItem>
           <NavItem href="/staffdashboard/EHR" icon={BookHeart}>
             EHR

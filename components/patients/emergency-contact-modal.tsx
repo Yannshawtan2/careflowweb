@@ -144,13 +144,13 @@ export function EmergencyContactModal({ isOpen, onClose, patient }: EmergencyCon
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Patient Information
+                Resident Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-[#2E7D32]">Patient Name</Label>
+                  <Label className="text-sm font-medium text-[#2E7D32]">Resident Name</Label>
                   <p className="text-sm">{patient.name}</p>
                 </div>
                 <div>

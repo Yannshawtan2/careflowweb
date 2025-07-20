@@ -150,7 +150,7 @@ export function AddPatientModal({ isOpen, onClose, onPatientAdded }: AddPatientM
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-[#2E7D32] flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            Add New Patient
+            Add New Resident
           </h2>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -162,13 +162,13 @@ export function AddPatientModal({ isOpen, onClose, onPatientAdded }: AddPatientM
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-[#2E7D32] font-medium">
-                Patient Name *
+                resident Name *
               </Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="Enter patient name"
+                placeholder="Enter resident name"
                 className="border-[#DDEB9D] focus:ring-[#A0C878]"
               />
             </div>
@@ -371,7 +371,7 @@ export function AddPatientModal({ isOpen, onClose, onPatientAdded }: AddPatientM
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading} className="bg-[#A0C878] hover:bg-[#8AB868] text-white">
-              {isLoading ? "Adding..." : "Add Patient"}
+              {isLoading ? "Adding..." : "Add Resident"}
             </Button>
           </div>
         </form>

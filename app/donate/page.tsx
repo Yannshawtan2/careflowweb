@@ -62,30 +62,50 @@ export default function DonateLandingPage() {
             {/* Campaigns */}
             <div className="lg:col-span-2">
               <div className="grid gap-6 md:grid-cols-2">
-                {campaigns.map(campaign => (
-                  <Card key={campaign.id} className="bg-[#FAF6E9] border-[#DDEB9D] flex flex-col">
-                    {campaign.imageUrl && (
-                      <img src={campaign.imageUrl} alt={campaign.title} className="w-full h-48 object-cover rounded-t-md" />
-                    )}
-                    <CardHeader>
-                      <CardTitle className="text-xl text-[#A0C878]">{campaign.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-1 flex flex-col justify-between">
-                      <p className="mb-4 text-gray-700 text-sm">{campaign.description}</p>
-                      <div className="mb-4">
-                        <Progress 
-                          value={campaign.totalRaised ? (campaign.totalRaised / campaign.goalAmount) * 100 : 0} 
-                          className="h-2 bg-[#FFFDF6] [&>div]:bg-[#A0C878]" 
-                        />
-                        <div className="flex justify-between text-xs mt-1">
-                          <span>Raised: MYR {campaign.totalRaised || 0}</span>
-                          <span>Goal: MYR {campaign.goalAmount}</span>
+                {campaigns.map(campaign => {
+                  const isGoalReached = (campaign.totalRaised || 0) >= campaign.goalAmount
+                  const progressPercentage = campaign.totalRaised ? (campaign.totalRaised / campaign.goalAmount) * 100 : 0
+                  
+                  return (
+                    <Card key={campaign.id} className={`border-[#DDEB9D] flex flex-col ${isGoalReached ? 'bg-green-50 border-green-200' : 'bg-[#FAF6E9]'}`}>
+                      {campaign.imageUrl && (
+                        <img src={campaign.imageUrl} alt={campaign.title} className="w-full h-48 object-cover rounded-t-md" />
+                      )}
+                      <CardHeader>
+                        <CardTitle className="text-xl text-[#A0C878] flex items-center gap-2">
+                          {campaign.title}
+                          {isGoalReached && <span className="text-green-600 text-lg">🎉</span>}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex-1 flex flex-col justify-between">
+                        <p className="mb-4 text-gray-700 text-sm">{campaign.description}</p>
+                        <div className="mb-4">
+                          <Progress 
+                            value={Math.min(progressPercentage, 100)} 
+                            className={`h-2 bg-[#FFFDF6] ${isGoalReached ? '[&>div]:bg-green-500' : '[&>div]:bg-[#A0C878]'}`}
+                          />
+                          <div className="flex justify-between text-xs mt-1">
+                            <span className={isGoalReached ? 'text-green-600 font-semibold' : ''}>
+                              Raised: MYR {campaign.totalRaised || 0}
+                            </span>
+                            <span>Goal: MYR {campaign.goalAmount}</span>
+                          </div>
+                          {isGoalReached && (
+                            <p className="text-green-600 text-xs mt-1 font-semibold">
+                              ✅ Goal reached! Thank you to all donors!
+                            </p>
+                          )}
+                          {progressPercentage > 100 && (
+                            <p className="text-green-600 text-xs mt-1">
+                              🎯 {Math.round(progressPercentage)}% funded - exceeded goal!
+                            </p>
+                          )}
                         </div>
-                      </div>
-                      <DonateModal campaign={campaign} />
-                    </CardContent>
-                  </Card>
-                ))}
+                        <DonateModal campaign={campaign} />
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </div>
             

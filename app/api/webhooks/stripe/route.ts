@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { adminDb } from '@/lib/firebase-admin'
 import { headers } from 'next/headers'
+import { adminDb } from '@/lib/firebase-admin'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
     const signature = (await headers()).get('stripe-signature')
 
-    console.log('🎯 Webhook received:', {
-      hasSignature: !!signature,
-      bodyLength: body.length,
-      webhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET
-    })
+    console.log('🎯 Webhook received (not processed - using manual verification)')
 
     if (!signature) {
-      console.error('❌ No signature found in webhook headers')
+      console.log('❌ No signature found in webhook headers')
       return NextResponse.json(
         { error: 'No signature found' },
         { status: 400 }
@@ -23,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
-      console.error('❌ STRIPE_WEBHOOK_SECRET environment variable not set')
+      console.log('❌ STRIPE_WEBHOOK_SECRET environment variable not set')
       return NextResponse.json(
         { error: 'Webhook secret not configured' },
         { status: 500 }
@@ -45,40 +41,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ Webhook event verified:', event.type, 'ID:', event.id)
+    console.log('ℹ️  Webhook event received but not processed:', event.type, 'ID:', event.id)
+    console.log('ℹ️  Using manual payment verification instead of webhooks')
 
-    // Handle the event
-    switch (event.type) {
-      case 'invoice.payment_succeeded':
-        await handleInvoicePaymentSucceeded(event.data.object)
-        break
-      case 'invoice.payment_failed':
-        await handleInvoicePaymentFailed(event.data.object)
-        break
-      case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object)
-        break
-      case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object)
-        break
-      case 'checkout.session.completed':
-        console.log('Processing checkout.session.completed event')
-        await handleCheckoutSessionCompleted(event.data.object)
-        break
-      case 'payment_intent.succeeded':
-        console.log('Processing payment_intent.succeeded event')
-        await handlePaymentIntentSucceeded(event.data.object)
-        break
-      case 'payment_intent.payment_failed':
-        await handlePaymentIntentFailed(event.data.object)
-        break
-      default:
-        console.log(`Unhandled event type: ${event.type}`)
-    }
-
-    return NextResponse.json({ received: true })
+    return NextResponse.json({ 
+      received: true, 
+      message: 'Webhook received but not processed - using manual verification' 
+    })
   } catch (error: any) {
-    console.error('Webhook error:', error)
+    console.error('❌ Webhook error:', error)
     return NextResponse.json(
       { error: error.message },
       { status: 500 }
@@ -324,30 +295,30 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
   }
 }
 
-async function handlePaymentIntentFailed(paymentIntent: any) {
-  console.log('Payment intent failed:', paymentIntent.id)
+// async function handlePaymentIntentFailed(paymentIntent: any) {
+//   console.log('Payment intent failed:', paymentIntent.id)
   
-  try {
-    // Find the donation record
-    const donationsSnapshot = await adminDb.collection('donations')
-      .where('paymentIntentId', '==', paymentIntent.id)
-      .get()
+//   try {
+//     // Find the donation record
+//     const donationsSnapshot = await adminDb.collection('donations')
+//       .where('paymentIntentId', '==', paymentIntent.id)
+//       .get()
 
-    if (donationsSnapshot.empty) {
-      console.log('No donation record found for payment intent:', paymentIntent.id)
-      return
-    }
+//     if (donationsSnapshot.empty) {
+//       console.log('No donation record found for payment intent:', paymentIntent.id)
+//       return
+//     }
 
-    const donationDoc = donationsSnapshot.docs[0]
+//     const donationDoc = donationsSnapshot.docs[0]
 
-    // Update donation status
-    await donationDoc.ref.update({
-      status: 'failed',
-      timestamp: new Date().toISOString(),
-    })
+//     // Update donation status
+//     await donationDoc.ref.update({
+//       status: 'failed',
+//       timestamp: new Date().toISOString(),
+//     })
 
-    console.log('Marked donation as failed:', donationDoc.id)
-  } catch (error) {
-    console.error('Error handling payment intent failure:', error)
-  }
-} 
+//     console.log('Marked donation as failed:', donationDoc.id)
+//   } catch (error) {
+//     console.error('Error handling payment intent failure:', error)
+//   }
+// } 

@@ -24,7 +24,7 @@ export default function PatientsPage() {
   const [clinicalNotes, setClinicalNotes] = useState<ClinicalNote[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [careLevelFilter, setCareLevelFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("active")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [isHealthModalOpen, setIsHealthModalOpen] = useState(false)
@@ -193,7 +193,7 @@ export default function PatientsPage() {
             <Heart className="h-4 w-4 text-[#A0C878]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{patients.length}</div>
+            <div className="text-2xl font-bold">{patients.filter(p => p.status === "active").length}</div>
             <p className="text-xs text-muted-foreground">Active patients</p>
           </CardContent>
         </Card>
@@ -204,34 +204,9 @@ export default function PatientsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-500">
-              {patients.filter(p => p.careLevel === "high").length}
+              {patients.filter(p => p.status === "active" && p.careLevel === "high").length}
             </div>
             <p className="text-xs text-muted-foreground">Require special attention</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-[#FAF6E9] border-[#DDEB9D]">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Updates</CardTitle>
-            <Activity className="h-4 w-4 text-[#A0C878]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {healthRecords.filter(hr => {
-                if (!hr.lastUpdated) return false
-                const lastUpdate = new Date(hr.lastUpdated)
-                const today = new Date()
-                const diffTime = Math.abs(today.getTime() - lastUpdate.getTime())
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-                return diffDays <= 1
-              }).length + clinicalNotes.filter(cn => {
-                const noteDate = new Date(cn.timestamp)
-                const today = new Date()
-                const diffTime = Math.abs(today.getTime() - noteDate.getTime())
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-                return diffDays <= 1
-              }).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Updated today</p>
           </CardContent>
         </Card>
         <Card className="bg-[#FAF6E9] border-[#DDEB9D]">
@@ -241,7 +216,7 @@ export default function PatientsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-500">
-              {patients.filter(p => p.medications && p.medications.length > 0).length}
+              {patients.filter(p => p.status === "active" && p.medications && p.medications.length > 0).length}
             </div>
             <p className="text-xs text-muted-foreground">On medication</p>
           </CardContent>
@@ -279,8 +254,8 @@ export default function PatientsPage() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="discharged">Discharged</SelectItem>
                 <SelectItem value="transferred">Transferred</SelectItem>
               </SelectContent>

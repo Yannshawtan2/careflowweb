@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       email,
       password,
       displayName: name,
-      phoneNumber: phone ? "+60" + phone : undefined,
+      phoneNumber: phone ?  phone : undefined,
     });
 
     // Add user document to Firestore

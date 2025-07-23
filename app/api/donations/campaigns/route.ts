@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
     try {
       console.log('API: Testing donation campaigns endpoint')
       
-      const snapshot = await adminDb.collection('campaigns').limit(5).get()
+      const snapshot = await adminDb.collection('campaigns').get()
       const campaigns = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()

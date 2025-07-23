@@ -163,10 +163,14 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
       console.log('Setting initial values:', initialValues)
       console.log('Role from initial values:', initialValues.role)
       
+      // Handle phone number formatting - remove +60 prefix if present for display
+      const phoneValue = initialValues.phone ? 
+        (initialValues.phone.startsWith('+60') ? initialValues.phone.substring(3) : initialValues.phone) : ''
+      
       // Set form values directly instead of using reset
       form.setValue('name', initialValues.name || '')
       form.setValue('email', initialValues.email || '')
-      form.setValue('phone', initialValues.phone || '')
+      form.setValue('phone', phoneValue)
       form.setValue('role', initialValues.role || '')
       form.setValue('startDate', initialValues.startDate || '')
       form.setValue('password', '')
@@ -315,8 +319,15 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
     try {
       console.log('Form submission - Mode:', mode, 'UID:', uid, 'Data:', data)
       
+      // Format phone number to include +60 prefix if not already present
+      const formattedPhone = data.phone.startsWith('+60') ? data.phone : `+60${data.phone}`
+      const formattedData = {
+        ...data,
+        phone: formattedPhone
+      }
+      
       // Validate password for new users
-      if (mode === "create" && (!data.password || data.password.trim() === "")) {
+      if (mode === "create" && (!formattedData.password || formattedData.password.trim() === "")) {
         toast.error("Password is required", {
           description: "Please enter a password for the new user.",
         })
@@ -325,14 +336,14 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
       }
       
       // Validate patient data if creating a guardian or updating a patient
-      if ((data.role === "guardian" || data.role === "patient") && showPatientForm) {
-        const requiredFields = data.role === "guardian" 
+      if ((formattedData.role === "guardian" || formattedData.role === "patient") && showPatientForm) {
+        const requiredFields = formattedData.role === "guardian" 
           ? (!patientData.patientName || !patientData.dateOfBirth || !patientData.roomNumber)
           : (!patientData.dateOfBirth || !patientData.roomNumber)
         
         if (requiredFields) {
           toast.error("Please fill in all required patient fields", {
-            description: data.role === "guardian" 
+            description: formattedData.role === "guardian" 
               ? "Patient name, date of birth, and room number are required."
               : "Date of birth and room number are required.",
           })
@@ -346,7 +357,7 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
       if (mode === "update" && uid) {
         console.log('Processing UPDATE request')
         // For updates, remove password fields if they're empty (keep existing password)
-        const { password, confirmPassword, ...updateDataWithoutPassword } = data
+        const { password, confirmPassword, ...updateDataWithoutPassword } = formattedData
         
         // Only include password if it's provided and not empty
         const updateData = {
@@ -356,7 +367,7 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
         
         // For patient updates, include patient-specific data
         // For guardian updates, also include patient data to update the associated patient
-        const finalUpdateData = (data.role === "patient" || data.role === "guardian") ? {
+        const finalUpdateData = (formattedData.role === "patient" || formattedData.role === "guardian") ? {
           ...updateData,
           dateOfBirth: patientData.dateOfBirth,
           roomNumber: patientData.roomNumber,
@@ -379,7 +390,7 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
         result = await res.json()
         if (result.success) {
           toast("User updated successfully", {
-            description: `${data.name} has been updated as a ${data.role}`,
+            description: `${formattedData.name} has been updated as a ${formattedData.role}`,
           })
           resetForm()
           onClose?.()
@@ -394,13 +405,13 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
         res = await fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify(formattedData),
         });
         result = await res.json();
         
         if (result.success) {
           // If creating a guardian, also create the patient record
-          if (data.role === "guardian" && showPatientForm) {
+          if (formattedData.role === "guardian" && showPatientForm) {
             try {
               console.log('Creating patient record for guardian:', result.uid)
               console.log('Patient data:', patientData)
@@ -411,8 +422,8 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
                 dateOfBirth: patientData.dateOfBirth,
                 roomNumber: patientData.roomNumber,
                 guardianId: result.uid, // Link to the guardian user
-                guardianName: data.name, // Use the guardian's name
-                guardianPhone: data.phone, // Use the guardian's phone
+                guardianName: formattedData.name, // Use the guardian's name
+                guardianPhone: formattedData.phone, // Use the guardian's formatted phone
                 emergencyContact: patientData.emergencyContact,
                 medicalHistory: patientData.medicalHistory,
                 allergies: patientData.allergies,
@@ -449,12 +460,12 @@ export function CreateUserForm({ initialValues, mode = "create", uid, isOpen = f
                 description: "Please contact support to add the patient information.",
               })
             }
-          } else if (data.role === "patient" && showPatientForm) {
+          } else if (formattedData.role === "patient" && showPatientForm) {
             // If creating a patient directly, include patient data in the user record
             toast.success("Patient created successfully")
           } else {
           toast('User created successfully', {
-            description: `${data.name} has been added as a ${data.role}`,
+            description: `${formattedData.name} has been added as a ${formattedData.role}`,
           });
           }
           

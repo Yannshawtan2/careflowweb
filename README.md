@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Project Overview (The "CareFlow Ecosystem")
+Use this for your main portfolio or a "master" repository.
 
-## Getting Started
+🏥 CareFlow: Integrated Elderly Management System
+CareFlow is a full-stack healthcare ecosystem designed to bridge the gap between elderly care facilities, staff, and guardians. Originally built as an RDS/Elastic Beanstalk monolith, the system has been modernized into a decoupled microservices architecture on AWS to ensure high availability, scalability, and cost-efficiency.
 
-First, run the development server:
+🏗️ Architecture Evolution
+Legacy: Monolithic app hosted on AWS Elastic Beanstalk (Node.js/Express) + Amazon RDS.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Modernized: Microservices via AWS Lambda, API Gateway, and Amazon S3, with Elastic Beanstalk retained for stable administrative services.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+📱 Project Components
+CareFlow Web: Next.js dashboard for Staff and Admins to manage inventory and health records.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+CareFlow Mobile: Flutter app for Guardians to receive emergency alerts and manage subscriptions.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+CareFlow Serverless: The backend logic handling image processing (S3) and event-driven tasks (Lambda).
 
-## Learn More
+CareFlow Web (Staff & Admin Dashboard)
+Place this in your Next.js repository.
 
-To learn more about Next.js, take a look at the following resources:
+💻 CareFlow Web
+The central nervous system for care facility operations. This dashboard allows healthcare providers to manage the day-to-day logistics of elderly care.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+✨ Key Features
+Emergency Trigger: Instant alert system for staff to notify guardians of critical events.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Inventory Management: Real-time tracking of medical supplies and facility resources.
 
-## Deploy on Vercel
+Subscription Engine: Admin tools to manage service tiers and donation campaigns.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Health Record Management: Secure CRUD operations for patient medical history.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+🛠️ Tech Stack
+Frontend: Next.js (React), Tailwind CSS
+
+Hosting: AWS Elastic Beanstalk
+
+Database: Amazon RDS (PostgreSQL/MySQL)
+
+Storage: Amazon S3 for staff documentation and medical reports.

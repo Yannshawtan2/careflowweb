@@ -1,5 +1,4 @@
 Project Overview (The "CareFlow Ecosystem")
-Use this for your main portfolio or a "master" repository.
 
 🏥 CareFlow: Integrated Elderly Management System
 CareFlow is a full-stack healthcare ecosystem designed to bridge the gap between elderly care facilities, staff, and guardians. Originally built as an RDS/Elastic Beanstalk monolith, the system has been modernized into a decoupled microservices architecture on AWS to ensure high availability, scalability, and cost-efficiency.
@@ -17,7 +16,6 @@ CareFlow Mobile: Flutter app for Guardians to receive emergency alerts and manag
 CareFlow Serverless: The backend logic handling image processing (S3) and event-driven tasks (Lambda).
 
 CareFlow Web (Staff & Admin Dashboard)
-Place this in your Next.js repository.
 
 💻 CareFlow Web
 The central nervous system for care facility operations. This dashboard allows healthcare providers to manage the day-to-day logistics of elderly care.

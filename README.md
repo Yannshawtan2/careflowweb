@@ -1,21 +1,5 @@
-Project Overview (The "CareFlow Ecosystem")
-
 🏥 CareFlow: Integrated Elderly Management System
-CareFlow is a full-stack healthcare ecosystem designed to bridge the gap between elderly care facilities, staff, and guardians. Originally built as an RDS/Elastic Beanstalk monolith, the system has been modernized into a decoupled microservices architecture on AWS to ensure high availability, scalability, and cost-efficiency.
-
-🏗️ Architecture Evolution
-Legacy: Monolithic app hosted on AWS Elastic Beanstalk (Node.js/Express) + Amazon RDS.
-
-Modernized: Microservices via AWS Lambda, API Gateway, and Amazon S3, with Elastic Beanstalk retained for stable administrative services.
-
-📱 Project Components
-CareFlow Web: Next.js dashboard for Staff and Admins to manage inventory and health records.
-
-CareFlow Mobile: Flutter app for Guardians to receive emergency alerts and manage subscriptions.
-
-CareFlow Serverless: The backend logic handling image processing (S3) and event-driven tasks (Lambda).
-
-CareFlow Web (Staff & Admin Dashboard)
+CareFlow is a multi-platform ecosystem designed to bridge the gap between elderly care facilities, staff, and guardians. It provides a real-time monitoring and administrative suite to ensure the safety and well-being of residents.
 
 💻 CareFlow Web
 The central nervous system for care facility operations. This dashboard allows healthcare providers to manage the day-to-day logistics of elderly care.
